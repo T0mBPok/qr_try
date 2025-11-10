@@ -65,11 +65,25 @@ PageElement = Union[
     FrameElement
 ]
 
-# --- Схема страницы ---
-class PageSchema(BaseModel):
+class PageCreate(BaseModel):
+    qr_id: int | None = None
+    name: str
+    background: dict = Field(default_factory=lambda: {"type": "color", "value": "#ffffff"})
+    elements: List[PageElement | None] = Field(default_factory=list)
+
+class PageUpdate(BaseModel):
+    qr_id: int | None = None
+    name: str | None = None
+    background: dict | None = None
+    elements: List[PageElement] | None = None
+
+class PageOut(BaseModel):
     id: int
+    name: str
+    user_id: int
+    qr_id: int | None = None
     background: dict
-    elements: List[PageElement]
-    
+    elements: List[PageElement | None] = None
+
     class Config:
         from_attributes = True
