@@ -72,4 +72,4 @@ class PageSchema(BaseModel):
     elements: List[PageElement]
     
     class Config:
-        orm_mode = True
+        from_attributes = True

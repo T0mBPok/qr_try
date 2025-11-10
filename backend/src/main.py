@@ -4,12 +4,14 @@ from fastapi.exceptions import HTTPException
 import uvicorn
 from src.exceptions import TokenExpiredException, TokenNoFoundException
 from src.user.router import router as users_router
+from src.qr.router import router as qrs_router
 
-app = FastAPI(title='Messanger')
+app = FastAPI(title='QR')
 PORT = 9000
 HOST = "0.0.0.0"
 
 app.include_router(users_router)
+app.include_router(qrs_router)
 
 
 @app.exception_handler(TokenExpiredException)
