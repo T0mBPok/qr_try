@@ -1,5 +1,6 @@
 from src.database import Base, int_pk, str_uniq
 from sqlalchemy.orm import Mapped, relationship
+from src.qr.models import QR
 
 class User(Base):
     id: Mapped[int_pk]
