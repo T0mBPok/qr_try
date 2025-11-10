@@ -6,7 +6,8 @@ class QR(Base):
     id: Mapped[int_pk]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete='CASCADE'))
     name: Mapped[str]
-    description: Mapped[str]
+    description: Mapped[str | None]
     link: Mapped[str_uniq]
     
     user: Mapped['User'] = relationship('User', back_populates='qrs')
+    page: Mapped["Page"] = relationship('Page', back_populates='qr')

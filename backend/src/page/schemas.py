@@ -70,3 +70,6 @@ class PageSchema(BaseModel):
     id: int
     background: dict
     elements: List[PageElement]
+    
+    class Config:
+        orm_mode = True

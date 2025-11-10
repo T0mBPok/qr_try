@@ -11,7 +11,7 @@ class UserLogic(UserDAO):
         
         hashed_password = get_pass_hashed(user_data.password)
         
-        new_user = await UserDAO.add(
+        new_user = await cls.add(
             email = user_data.email,
             username = user_data.username,
             password = hashed_password
