@@ -3,21 +3,17 @@ from typing import Optional
 
 class QROut(BaseModel):
     id: int
-    user_id: int
-    name: str
-    description: str
+    description: str | None = None
     link: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class QRCreate(BaseModel):
-    user_id: int
     name: str
     description: Optional[str] = None
-    link: str
+    link: Optional[str] = None
 
 class QRUpdate(BaseModel):
-    name: Optional[str] = None
     description: Optional[str] = None
     link: Optional[str] = None
