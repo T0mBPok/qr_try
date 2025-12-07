@@ -11,7 +11,7 @@ class PageDAO(BaseDAO):
     
     @classmethod
     @with_session
-    async def add(cls, session, user_id: int, name: str, background: dict, elements: list, qr_id: int | None = None):
+    async def add(cls, session, user_id: int, name: str, background: dict, elements: list, files: list, qr_id: int | None = None):
         existing = await session.execute(select(cls.model).filter_by(name=name))
         if existing.scalar_one_or_none():
             raise HTTPException(
@@ -24,7 +24,8 @@ class PageDAO(BaseDAO):
             qr_id=qr_id,
             name=name,
             background=background,
-            elements=elements
+            elements=elements,
+            files=files
         )
         session.add(page)
         await session.flush()
