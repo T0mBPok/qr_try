@@ -70,6 +70,7 @@ class PageCreate(BaseModel):
     name: str
     background: dict = Field(default_factory=lambda: {"type": "color", "value": "#ffffff"})
     elements: List[PageElement | None] = Field(default_factory=list)
+    files: List[str] = []
 
 class PageUpdate(BaseModel):
     qr_id: int | None = None
