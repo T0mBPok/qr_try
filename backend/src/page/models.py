@@ -7,7 +7,7 @@ from src.user.models import User
 class Page(Base):
     id: Mapped[int_pk]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id', ondelete="CASCADE"))
-    qr_id: Mapped[int | None] = mapped_column(ForeignKey('qrs.id', ondelete='SET DEFAULT'), nullable=True)
+    qr_id: Mapped[int | None] = mapped_column(ForeignKey('qrs.id', ondelete='SET NULL'), nullable=True)
     name: Mapped[str_uniq]
     files: Mapped[list[str]] = mapped_column(ARRAY(String), default = lambda : [])
     background: Mapped[dict] = mapped_column(JSON,  default={})
