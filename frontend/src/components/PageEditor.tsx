@@ -110,30 +110,39 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
         setPageDescription(page.description || '');
         
         // Загрузить контент страницы
-        if (page.content) {
-          const content = page.content;
-          
-          // З��грузить тему фона
-          if (content.theme?.background) {
-            const bg = content.theme.background;
-            if (bg.type === 'color') {
-              setBgType('color');
-              setBgColor(bg.value);
-            } else if (bg.type === 'gradient') {
-              setBgType('gradient');
-              // TODO: Parse gradient colors from bg.value
-            } else if (bg.type === 'image') {
-              setBgType('image');
-              setBgImage(bg.value);
+        // Загрузка background
+        if (page.background) {
+          const bg = page.background;
+
+          if (bg.type === "color") {
+            setBgType("color");
+            setBgColor(bg.value);
+          }
+
+          if (bg.type === "gradient") {
+            setBgType("gradient");
+
+            // Примитивный парсер градиента (если хочешь — напишу идеальный)
+            const match = bg.value.match(/linear-gradient\(135deg, (.*) 0%, (.*) 100%\)/);
+            if (match) {
+              setBgGradient({
+                from: match[1].trim(),
+                to: match[2].trim(),
+              });
             }
           }
-          
-          // Загрузить блоки контента
-          if (content.blocks) {
-            // TODO: Преобразовать blocks в elements
-            console.log('📦 Блоки контента:', content.blocks);
+
+          if (bg.type === "image") {
+            setBgType("image");
+            setBgImage(bg.value);
           }
         }
+
+        // Загрузка элементов
+        if (page.elements) {
+          setElements(page.elements);
+        }
+
         
         console.log('✅ Страница загружена:', page);
       } else {
@@ -150,40 +159,33 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
     }
   };
 
-  const createNewPage = async () => {
+    const createNewPage = async () => {
     if (!qrId) return;
 
     try {
-      console.log('🆕 Создание новой страницы...');
-      
+      console.log("🆕 Создание новой страницы...");
+
       const response = await api.page.create({
-        qr_code_id: qrId,
-        title: 'Моя страница',
-        description: '',
-        content: {
-          version: '1.0',
-          theme: {
-            background: {
-              type: 'gradient',
-              value: 'linear-gradient(135deg, #7c6afa 0%, #c89afc 100%)'
-            },
-            textColor: '#ffffff',
-            accentColor: '#7c6afa'
-          },
-          blocks: []
-        }
+        qr_id: Number(qrId),
+        name: "Моя страница",
+        background: {
+          type: "gradient",
+          value: `linear-gradient(135deg, #7c6afa 0%, #c89afc 100%)`,
+        },
+        elements: [],
       });
-      
-      const page = response.data.page;
+
+      const page = response.data;
       setPageData(page);
       setPageId(page.id);
-      
-      console.log('✅ Новая страница создана:', page);
+
+      console.log("✅ Новая страница создана:", page);
     } catch (err: any) {
-      console.error('❌ Ошибка создания страницы:', err);
+      console.error("❌ Ошибка создания страницы:", err);
       throw err;
     }
   };
+
 
   const handleSavePage = async () => {
     if (!pageId) {
@@ -194,70 +196,63 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
     try {
       setSaving(true);
       setError(null);
-      
-      console.log('💾 Сохранение страницы:', {
-        pageId,
-        title: pageTitle,
-        elements: elements.length,
-        drawings: drawings.length
-      });
 
-      // Подготовить контент для отправки
-      const content = {
-        version: '1.0',
-        theme: {
-          background: {
-            type: bgType,
-            value: bgType === 'color' 
-              ? bgColor 
-              : bgType === 'gradient'
-              ? `linear-gradient(135deg, ${bgGradient.from} 0%, ${bgGradient.to} 100%)`
-              : bgImage || ''
-          },
-          textColor: '#ffffff',
-          accentColor: '#7c6afa'
-        },
-        blocks: elements.map((el, index) => ({
-          id: el.id,
-          type: el.type === 'link' ? 'link_button' : el.type,
-          order: index,
-          visible: true,
-          data: {
-            content: el.content,
-            position: { x: el.x, y: el.y },
-            size: { width: el.width, height: el.height },
-            rotation: el.rotation,
-            style: {
-              fontSize: el.fontSize,
-              fontFamily: el.fontFamily,
-              color: el.color,
-              bold: el.bold,
-              italic: el.italic,
-              underline: el.underline
+      // Подготовить background в формате backend
+      const background =
+        bgType === "color"
+          ? { type: "color", value: bgColor }
+          : bgType === "gradient"
+          ? {
+              type: "gradient",
+              value: `linear-gradient(135deg, ${bgGradient.from} 0%, ${bgGradient.to} 100%)`,
             }
-          }
-        }))
+          : {
+              type: "image",
+              value: bgImage,
+            };
+
+      // Подготовить элементы
+      const formattedElements = elements.map((el) => ({
+        id: el.id,
+        type: el.type,
+        content: el.content,
+        x: el.x,
+        y: el.y,
+        width: el.width,
+        height: el.height,
+        rotation: el.rotation,
+        style: {
+          fontSize: el.fontSize,
+          fontFamily: el.fontFamily,
+          color: el.color,
+          bold: el.bold,
+          italic: el.italic,
+          underline: el.underline,
+        },
+      }));
+
+      const payload = {
+        name: pageTitle,
+        background,
+        elements: formattedElements,
       };
 
-      await api.page.update(pageId, {
-        title: pageTitle,
-        description: pageDescription,
-        content,
-        published: true
-      });
+      console.log("📤 Отправка payload:", payload);
+
+      await api.page.update(pageId, payload);
 
       setSaved(true);
       setHasUnsavedChanges(false);
       setTimeout(() => setSaved(false), 2000);
-      
-      console.log('✅ Страниц�� сохранена');
+
     } catch (err: any) {
-      console.error('❌ Ошибка сохранения:', err);
-      setError(err.message || 'Не удалось сохранить страницу');
+      console.error("❌ Ошибка сохранения:", err);
+      setError(err.message || "Не удалось сохранить страницу");
     } finally {
       setSaving(false);
     }
   };
+
 
   // Initialize - only run once
   useEffect(() => {

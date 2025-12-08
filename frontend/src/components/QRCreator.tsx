@@ -280,7 +280,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                     Основная информация
                   </h2>
                   <p className="font-['Roboto'] text-white/60">
-                    Давайте на��нем с названия вашего QR-кода
+                    Давайте начнем с названия вашего QR-кода
                   </p>
                 </div>
 
@@ -332,7 +332,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                     <div className="space-y-3">
                       <label className="font-['Roboto'] text-white/80 flex items-center gap-2">
                         <Palette className="w-5 h-5" />
-                        Стил�� QR-кода
+                        Стиль QR-кода
                       </label>
                       <div className="grid grid-cols-2 gap-3">
                         {qrStyles.map((style) => (
@@ -396,7 +396,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
 
                       {/* Custom Color Selection */}
                       <div className="space-y-3 pt-2">
-                        <p className="font-['Roboto'] text-white/60 text-sm">Настрить цвета</p>
+                        <p className="font-['Roboto'] text-white/60 text-sm">Настроить цвета</p>
                         
                         {/* Toggle between solid and gradient */}
                         <div className="flex gap-2 bg-white/5 rounded-xl p-1">
@@ -632,6 +632,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                           <Download className="w-5 h-5" />
                           Скачать QR-код
                         </button>
+                      </div>
 
                       {/* Tip */}
                       <div className="mt-6 p-4 bg-[#1a1a2e] rounded-xl border border-[#7c6afa]/20">
@@ -662,7 +663,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                     Тип QR-кода
                   </h2>
                   <p className="font-['Roboto'] text-white/60">
-                    Выберит��, куда будет вести ваш QR-код
+                    Выберите, куда будет вести ваш QR-код
                   </p>
                 </div>
 
