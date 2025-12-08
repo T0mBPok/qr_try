@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from src.exceptions import TokenExpiredException, TokenNoFoundException
 from src.user.router import router as users_router
@@ -10,6 +11,14 @@ from src.page.router import router as pages_router
 app = FastAPI(title='QR')
 PORT = 9000
 HOST = "0.0.0.0"
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
 app.include_router(users_router)
 app.include_router(qrs_router)

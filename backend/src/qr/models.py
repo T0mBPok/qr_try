@@ -8,6 +8,7 @@ class QR(Base):
     description: Mapped[str | None]
     name: Mapped[str]
     link: Mapped[str] = mapped_column(nullable=True)
+    src: Mapped[str]
     
     user: Mapped['User'] = relationship('User', back_populates='qrs')
     page: Mapped["Page"] = relationship('Page', back_populates='qr')

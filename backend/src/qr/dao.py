@@ -9,14 +9,17 @@ class QRDAO(BaseDAO):
     model = QR
     
     @with_session
-    async def add(session, user: str, name: str, description:str, link: str|None = None) -> QR:
+    async def add(session, user: str, name: str, src: str, description:str, link: str|None = None) -> QR:
         if not link:
             qr = QR(
                     user_id=user.id,
+                    name=name,
+                    description=description,
+                    src = src,
                     link=f"https://##/pages/{name}"
                 )
             session.add(qr)
-            session.flush()
+            await session.flush()
             
             page = Page(
                 user_id = user.id,
@@ -29,6 +32,9 @@ class QRDAO(BaseDAO):
         else:
             qr = QR(
                     user_id=user.id,
+                    name=name,
+                    description=description,
+                    src = src,
                     link=link
                 )
         session.add(qr)
