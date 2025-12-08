@@ -28,7 +28,10 @@ async def auth_user(response: Response, user_data: SUserAuth) -> dict:
 
 @router.get("/check/")
 async def check_user(user: str = Depends(get_current_user)):
-    return {"ok": True, "user": {"id": user.id, "username": user.username, "email": user.email}}
+    if user:
+        return {"ok": True, "user": {"id": user.id, "username": user.username, "email": user.email}}
+    else:
+        return {"ok": False}
 
 @router.post("/logout/")
 async def logout_user(response: Response):

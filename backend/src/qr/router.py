@@ -51,7 +51,7 @@ async def create_qr(
     user=Depends(get_current_user),
 ):
     # image_path = resolve_qr_image(data.qr_style)
-    image_path = ""
+    image_path = "../../uploads/qr_codes/1/1894c9c8-5471-4fd0-a801-1e010686e6ff.jpg"
 
     qr = await QRDAO.add(
         user=user,
