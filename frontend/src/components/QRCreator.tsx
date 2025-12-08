@@ -1,288 +1,734 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
-import { ArrowLeft, Download, Sparkles, Palette, Grid3x3 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Slider } from './ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { ArrowLeft, ArrowRight, Check, QrCode, Download, Palette, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import api from '../services/api';
 
-type NavigationFunction = (page: 'home' | 'auth' | 'dashboard' | 'create-qr' | 'link-setup' | 'editor' | 'subscription') => void;
+type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription';
 
 interface QRCreatorProps {
-  onNavigate: NavigationFunction;
+  onNavigate: (page: Page) => void;
+  onComplete: () => void;
 }
 
-export default function QRCreator({ onNavigate }: QRCreatorProps) {
+type QRStyle = 'square' | 'rounded' | 'dots' | 'fluid';
+
+export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
+  const [step, setStep] = useState(1);
   const [qrName, setQrName] = useState('');
-  const [qrData, setQrData] = useState('https://example.com');
-  const [qrColor, setQrColor] = useState('#7c6afa');
-  const [bgColor, setBgColor] = useState('#ffffff');
-  const [cornerStyle, setCornerStyle] = useState<'square' | 'rounded' | 'dots'>('square');
-  const [size, setSize] = useState([300]);
-  const [errorCorrection, setErrorCorrection] = useState<'L' | 'M' | 'Q' | 'H'>('M');
+  const [qrStyle, setQrStyle] = useState<QRStyle>('square');
+  const [primaryColor, setPrimaryColor] = useState('#7c6afa');
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [useGradient, setUseGradient] = useState(false);
+  const [gradientColor2, setGradientColor2] = useState('#c89afc');
+  const [logo, setLogo] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const patterns = [
-    { id: 'solid', name: 'Сплошной', preview: 'bg-gradient-to-r from-[#7c6afa] to-[#c89afc]' },
-    { id: 'dots', name: 'Точки', preview: 'bg-gradient-to-r from-[#c89afc] to-[#7c6afa]' },
-    { id: 'rounded', name: 'Скругленный', preview: 'bg-gradient-to-r from-[#7c6afa] to-[#df5950]' }
-  ];
-
-  const generateQRCode = () => {
-    const baseUrl = 'https://api.qrserver.com/v1/create-qr-code/';
-    const params = new URLSearchParams({
-      size: `${size[0]}x${size[0]}`,
-      data: qrData,
-      color: qrColor.replace('#', ''),
-      bgcolor: bgColor.replace('#', ''),
-      qzone: '2',
-      format: 'png'
-    });
-    return `${baseUrl}?${params.toString()}`;
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleSave = () => {
-    // In a real app, this would save to database
-    onNavigate('dashboard');
+  const handleCreateQR = async () => {
+    if (!qrName.trim()) {
+      setError('Пожалуйста, введите название QR-кода');
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setError(null);
+      
+      console.log('📝 Создание QR-кода:', {
+        name: qrName,
+        style: qrStyle,
+        colors: { primary: primaryColor, background: backgroundColor, gradient: useGradient }
+      });
+
+      const response = await api.qr.create({
+        name: qrName,
+        qr_style: {
+          pattern: qrStyle,
+          eye_style: qrStyle === 'rounded' ? 'rounded' : 'square',
+          colors: useGradient 
+            ? {
+                primary: primaryColor,
+                secondary: gradientColor2,
+                background: backgroundColor,
+                gradient: true
+              }
+            : {
+                primary: primaryColor,
+                background: backgroundColor,
+                gradient: false
+              },
+          logo_url: logo || undefined,
+        }
+      });
+
+      console.log('✅ QR-код создан:', response.data.qr_code);
+      
+      // Показать успех и перейти к следующему шагу
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        if (step < 3) setStep(step + 1);
+      }, 1500);
+      
+    } catch (err: any) {
+      console.error('❌ Ошибка создания QR-кода:', err);
+      setError(err.message || 'Не удалось создать QR-код');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 1) {
+      // Шаг 1 -> 2: Просто переходим
+      if (!qrName.trim()) {
+        setError('Пожалуйста, введите название QR-кода');
+        return;
+      }
+      setStep(2);
+    } else if (step === 2) {
+      // Шаг 2 -> 3: Создаём QR через API
+      handleCreateQR();
+    } else {
+      // Шаг 3: Завершение
+      onComplete();
+    }
+  };
+
+  const handlePrevious = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  const qrStyles: { name: string; value: QRStyle; icon: string }[] = [
+    { name: 'Квадраты', value: 'square', icon: '■' },
+    { name: 'Скругленные', value: 'rounded', icon: '●' },
+    { name: 'Точки', value: 'dots', icon: '•' },
+    { name: 'Плавные', value: 'fluid', icon: '~' }
+  ];
+
+  const presetThemes = [
+    { name: 'Фиолетовый', primary: '#7c6afa', bg: '#ffffff', gradient: false },
+    { name: 'Красный', primary: '#df5950', bg: '#ffffff', gradient: false },
+    { name: 'Классический', primary: '#000000', bg: '#ffffff', gradient: false },
+    { name: 'Градиент Purple', primary: '#7c6afa', secondary: '#c89afc', bg: '#ffffff', gradient: true },
+    { name: 'Градиент Sunset', primary: '#df5950', secondary: '#ff9a56', bg: '#ffffff', gradient: true },
+    { name: 'Градиент Ocean', primary: '#4facfe', secondary: '#00f2fe', bg: '#ffffff', gradient: true }
+  ];
+
+  const qrDataUrl = `https://qrwear.app/${qrName || 'demo'}`;
+
+  // Render real QR code with different styles
+  const renderQRWithStyle = () => {
+    // Get the QR cell shape based on style
+    let cellShape: 'square' | 'dots' | 'rounded' | 'fluid' = 'square';
+    
+    if (qrStyle === 'square') cellShape = 'square';
+    else if (qrStyle === 'rounded') cellShape = 'rounded';
+    else if (qrStyle === 'dots') cellShape = 'dots';
+    else if (qrStyle === 'fluid') cellShape = 'dots'; // fluid uses dots but with different size
+    
+    if (useGradient) {
+      // For gradient QR codes, we need to create a custom SVG with gradient fill
+      return (
+        <div className="relative w-full h-full">
+          <svg width="0" height="0" className="absolute">
+            <defs>
+              <linearGradient id="qrGradientFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{ stopColor: primaryColor }} />
+                <stop offset="100%" style={{ stopColor: gradientColor2 }} />
+              </linearGradient>
+            </defs>
+          </svg>
+          <QRCodeSVG
+            value={qrDataUrl}
+            size={256}
+            level="H"
+            includeMargin={false}
+            style={{
+              width: '100%',
+              height: '100%'
+            }}
+            fgColor="url(#qrGradientFill)"
+            bgColor={backgroundColor}
+            imageSettings={
+              logo
+                ? {
+                    src: logo,
+                    height: 56,
+                    width: 56,
+                    excavate: true,
+                  }
+                : undefined
+            }
+          />
+        </div>
+      );
+    }
+
+    // Regular QR code (non-gradient)
+    return (
+      <QRCodeSVG
+        value={qrDataUrl}
+        size={256}
+        level="H"
+        includeMargin={false}
+        style={{
+          width: '100%',
+          height: '100%'
+        }}
+        fgColor={primaryColor}
+        bgColor={backgroundColor}
+        imageSettings={
+          logo
+            ? {
+                src: logo,
+                height: 56,
+                width: 56,
+                excavate: true,
+              }
+            : undefined
+        }
+      />
+    );
   };
 
   return (
-    <div className="min-h-screen bg-[#040404]">
-      <div className="max-w-[1400px] mx-auto p-6 md:p-12">
-        {/* Header */}
-        <div className="mb-12">
-          <button
-            onClick={() => onNavigate('dashboard')}
-            className="text-white/70 hover:text-white transition-colors font-['Roboto'] flex items-center gap-2 mb-6"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Назад в панель управления
-          </button>
-          <h1 className="font-['Roboto'] text-white mb-2">Создание QR-кода</h1>
-          <p className="font-['Roboto'] text-white/70">
-            Настройте дизайн и параметры вашего уникального QR-кода
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#040404] relative overflow-hidden">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#7c6afa]/10 via-transparent to-[#c89afc]/10" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Panel - Settings */}
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8"
-            >
-              <h2 className="font-['Roboto'] text-white mb-6 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#c89afc]" />
-                Основные настройки
-              </h2>
+      {/* Back button */}
+      <button
+        onClick={() => onNavigate('dashboard')}
+        className="absolute top-4 left-4 sm:top-8 sm:left-8 z-20 px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
+      >
+        <span className="font-['Roboto']">← К панели</span>
+      </button>
 
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="qr-name" className="text-white/90 font-['Roboto']">
-                    Название QR-кода
-                  </Label>
-                  <Input
-                    id="qr-name"
-                    value={qrName}
-                    onChange={(e) => setQrName(e.target.value)}
-                    placeholder="Например: Моя визитка"
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#7c6afa]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="qr-data" className="text-white/90 font-['Roboto']">
-                    Данные для QR-кода (URL)
-                  </Label>
-                  <Input
-                    id="qr-data"
-                    value={qrData}
-                    onChange={(e) => setQrData(e.target.value)}
-                    placeholder="https://example.com"
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#7c6afa]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-white/90 font-['Roboto']">
-                    Размер: {size[0]}px
-                  </Label>
-                  <Slider
-                    value={size}
-                    onValueChange={setSize}
-                    min={200}
-                    max={600}
-                    step={50}
-                    className="[&_[role=slider]]:bg-gradient-to-r [&_[role=slider]]:from-[#7c6afa] [&_[role=slider]]:to-[#c89afc]"
-                  />
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8"
-            >
-              <h2 className="font-['Roboto'] text-white mb-6 flex items-center gap-2">
-                <Palette className="w-5 h-5 text-[#c89afc]" />
-                Настройка цвета
-              </h2>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="qr-color" className="text-white/90 font-['Roboto']">
-                      Цвет QR-кода
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="qr-color"
-                        type="color"
-                        value={qrColor}
-                        onChange={(e) => setQrColor(e.target.value)}
-                        className="w-16 h-12 p-1 bg-white/5 border-white/10 cursor-pointer"
-                      />
-                      <Input
-                        value={qrColor}
-                        onChange={(e) => setQrColor(e.target.value)}
-                        className="flex-1 bg-white/5 border-white/10 text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="bg-color" className="text-white/90 font-['Roboto']">
-                      Цвет фона
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="bg-color"
-                        type="color"
-                        value={bgColor}
-                        onChange={(e) => setBgColor(e.target.value)}
-                        className="w-16 h-12 p-1 bg-white/5 border-white/10 cursor-pointer"
-                      />
-                      <Input
-                        value={bgColor}
-                        onChange={(e) => setBgColor(e.target.value)}
-                        className="flex-1 bg-white/5 border-white/10 text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-white/90 font-['Roboto']">Быстрый выбор</Label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { fg: '#7c6afa', bg: '#ffffff', name: 'Фиолетовый' },
-                      { fg: '#000000', bg: '#ffffff', name: 'Классика' },
-                      { fg: '#df5950', bg: '#ffffff', name: 'Красный' },
-                      { fg: '#ffffff', bg: '#7c6afa', name: 'Инверсия' },
-                      { fg: '#c89afc', bg: '#040404', name: 'Темный' },
-                      { fg: '#00ff88', bg: '#000000', name: 'Неон' }
-                    ].map((preset) => (
-                      <button
-                        key={preset.name}
-                        onClick={() => {
-                          setQrColor(preset.fg);
-                          setBgColor(preset.bg);
-                        }}
-                        className="h-16 rounded-xl border-2 border-white/10 hover:border-[#7c6afa] transition-all"
-                        style={{ backgroundColor: preset.bg }}
-                      >
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-8 h-8 rounded" style={{ backgroundColor: preset.fg }} />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8"
-            >
-              <h2 className="font-['Roboto'] text-white mb-6 flex items-center gap-2">
-                <Grid3x3 className="w-5 h-5 text-[#c89afc]" />
-                Стиль узора
-              </h2>
-
-              <div className="grid grid-cols-3 gap-4">
-                {patterns.map((pattern) => (
-                  <button
-                    key={pattern.id}
-                    onClick={() => setCornerStyle(pattern.id as any)}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      cornerStyle === pattern.id
-                        ? 'border-[#7c6afa] bg-[#7c6afa]/10'
-                        : 'border-white/10 hover:border-white/20'
+      <div className="relative z-10 container mx-auto px-4 py-16 sm:py-12 min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-6xl">
+          {/* Progress Steps */}
+          <div className="mb-8 sm:mb-12">
+            <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4 overflow-x-auto pb-2">{[1, 2, 3].map((s) => (
+                <div key={s} className="flex items-center shrink-0">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-['Roboto'] transition-all duration-300 ${
+                      s === step
+                        ? 'bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white scale-110'
+                        : s < step
+                        ? 'bg-[#7c6afa] text-white'
+                        : 'bg-white/10 text-white/40'
                     }`}
                   >
-                    <div className={`w-full h-20 rounded-lg ${pattern.preview} mb-3`} />
-                    <p className="font-['Roboto'] text-white/90">{pattern.name}</p>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
+                    {s < step ? <Check className="w-6 h-6" /> : s}
+                  </div>
+                  {s < 3 && (
+                    <div
+                      className={`w-16 lg:w-24 h-1 mx-2 rounded-full transition-all duration-300 ${
+                        s < step ? 'bg-[#7c6afa]' : 'bg-white/10'
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="text-center">
+              <p className="font-['Roboto'] text-white/60">
+                Шаг {step} из 3
+              </p>
+            </div>
           </div>
 
-          {/* Right Panel - Preview */}
-          <div className="lg:sticky lg:top-6 h-fit">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8"
-            >
-              <h2 className="font-['Roboto'] text-white mb-6">Предварительный просмотр</h2>
+          {/* Step Content */}
+          <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 lg:p-12">
+            {/* Step 1: Basic Info */}
+            {step === 1 && (
+              <div className="space-y-8">
+                <div className="text-center mb-8">
+                  <h2 className="font-['Roboto'] text-3xl lg:text-4xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] bg-clip-text text-transparent mb-2">
+                    Основная информация
+                  </h2>
+                  <p className="font-['Roboto'] text-white/60">
+                    Давайте на��нем с названия вашего QR-кода
+                  </p>
+                </div>
 
-              <div className="bg-gradient-to-br from-white/10 to-white/5 rounded-2xl p-8 mb-6 flex items-center justify-center min-h-[400px]">
-                <motion.div
-                  key={`${qrData}-${qrColor}-${bgColor}-${size[0]}`}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white p-6 rounded-2xl shadow-2xl"
-                >
-                  <img
-                    src={generateQRCode()}
-                    alt="QR Code Preview"
-                    className="w-full h-auto"
-                    style={{ maxWidth: size[0], maxHeight: size[0] }}
-                  />
-                </motion.div>
+                <div className="max-w-2xl mx-auto space-y-6">
+                  <div className="space-y-2">
+                    <label className="font-['Roboto'] text-white/80">Название QR-кода</label>
+                    <input
+                      type="text"
+                      value={qrName}
+                      onChange={(e) => setQrName(e.target.value)}
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:border-[#7c6afa] focus:outline-none transition-colors font-['Roboto']"
+                      placeholder="Например: Мой профиль, Instagram, Портфолио..."
+                    />
+                    <p className="font-['Roboto'] text-white/40 text-sm">
+                      Это название для вашего удобства, пользователи его не увидят
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="font-['Roboto'] text-white/80">Описание (опционально)</label>
+                    <textarea
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:border-[#7c6afa] focus:outline-none transition-colors font-['Roboto'] resize-none"
+                      rows={4}
+                      placeholder="Краткое описание для чего этот QR-код..."
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Design Customization */}
+            {step === 2 && (
+              <div className="space-y-8">
+                <div className="text-center mb-8">
+                  <h2 className="font-['Roboto'] text-3xl lg:text-4xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] bg-clip-text text-transparent mb-2">
+                    Дизайн QR-кода
+                  </h2>
+                  <p className="font-['Roboto'] text-white/60">
+                    Настройте внешний вид вашего QR-кода
+                  </p>
+                </div>
+
+                <div className="grid lg:grid-cols-2 gap-12">
+                  {/* Customization Options */}
+                  <div className="space-y-6">
+                    {/* Style Selection */}
+                    <div className="space-y-3">
+                      <label className="font-['Roboto'] text-white/80 flex items-center gap-2">
+                        <Palette className="w-5 h-5" />
+                        Стил�� QR-кода
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {qrStyles.map((style) => (
+                          <button
+                            key={style.value}
+                            onClick={() => setQrStyle(style.value)}
+                            className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                              qrStyle === style.value
+                                ? 'border-[#7c6afa] bg-[#7c6afa]/10'
+                                : 'border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            <div className="text-3xl mb-2">{style.icon}</div>
+                            <p className="font-['Roboto'] text-white text-sm">{style.name}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Color Selection - Redesigned */}
+                    <div className="space-y-4">
+                      <label className="font-['Roboto'] text-white/80">Цветовая схема</label>
+                      
+                      {/* Preset Themes */}
+                      <div className="space-y-3">
+                        <p className="font-['Roboto'] text-white/60 text-sm">Готовые решения</p>
+                        <div className="grid grid-cols-3 gap-3">
+                          {presetThemes.map((preset, i) => (
+                            <button
+                              key={i}
+                              onClick={() => {
+                                setPrimaryColor(preset.primary);
+                                setBackgroundColor(preset.bg);
+                                setUseGradient(preset.gradient);
+                                if (preset.gradient && preset.secondary) {
+                                  setGradientColor2(preset.secondary);
+                                }
+                              }}
+                              className={`group relative p-3 rounded-xl border-2 transition-all duration-300 hover:scale-105 ${
+                                (!useGradient && primaryColor === preset.primary && !preset.gradient) ||
+                                (useGradient && preset.gradient && primaryColor === preset.primary && gradientColor2 === preset.secondary)
+                                  ? 'border-[#7c6afa]'
+                                  : 'border-white/10 hover:border-white/30'
+                              }`}
+                            >
+                              <div 
+                                className="w-full h-16 rounded-lg mb-2"
+                                style={
+                                  preset.gradient && preset.secondary
+                                    ? { background: `linear-gradient(135deg, ${preset.primary}, ${preset.secondary})` }
+                                    : { backgroundColor: preset.primary }
+                                }
+                              />
+                              <p className="font-['Roboto'] text-white text-xs text-center truncate">
+                                {preset.name}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Custom Color Selection */}
+                      <div className="space-y-3 pt-2">
+                        <p className="font-['Roboto'] text-white/60 text-sm">Настрить цвета</p>
+                        
+                        {/* Toggle between solid and gradient */}
+                        <div className="flex gap-2 bg-white/5 rounded-xl p-1">
+                          <button
+                            onClick={() => setUseGradient(false)}
+                            className={`flex-1 py-2.5 rounded-lg font-['Roboto'] text-sm transition-all duration-300 ${
+                              !useGradient
+                                ? 'bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white'
+                                : 'text-white/60 hover:text-white'
+                            }`}
+                          >
+                            Однотонный
+                          </button>
+                          <button
+                            onClick={() => setUseGradient(true)}
+                            className={`flex-1 py-2.5 rounded-lg font-['Roboto'] text-sm transition-all duration-300 ${
+                              useGradient
+                                ? 'bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white'
+                                : 'text-white/60 hover:text-white'
+                            }`}
+                          >
+                            Градиент
+                          </button>
+                        </div>
+
+                        {/* Color Pickers */}
+                        <div className="space-y-3">
+                          {!useGradient ? (
+                            <div className="space-y-3">
+                              {/* QR Color */}
+                              <div className="space-y-2">
+                                <label className="font-['Roboto'] text-white/60 text-sm">Цвет QR-кода</label>
+                                <div className="relative group">
+                                  <input
+                                    type="color"
+                                    value={primaryColor}
+                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 group-hover:border-[#7c6afa] bg-white/5">
+                                    <div
+                                      className="w-10 h-10 rounded-lg shrink-0"
+                                      style={{ backgroundColor: primaryColor }}
+                                    />
+                                    <span className="font-['Roboto'] text-white text-sm flex-1">
+                                      {primaryColor.toUpperCase()}
+                                    </span>
+                                    <Palette className="w-5 h-5 text-white/40 group-hover:text-[#7c6afa]" />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Background */}
+                              <div className="space-y-2">
+                                <label className="font-['Roboto'] text-white/60 text-sm">Цвет фона</label>
+                                <div className="relative group">
+                                  <input
+                                    type="color"
+                                    value={backgroundColor}
+                                    onChange={(e) => setBackgroundColor(e.target.value)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 group-hover:border-[#7c6afa] bg-white/5">
+                                    <div
+                                      className="w-10 h-10 rounded-lg shrink-0 border border-white/20"
+                                      style={{ backgroundColor }}
+                                    />
+                                    <span className="font-['Roboto'] text-white text-sm flex-1">
+                                      {backgroundColor.toUpperCase()}
+                                    </span>
+                                    <Palette className="w-5 h-5 text-white/40 group-hover:text-[#7c6afa]" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {/* Gradient Color 1 */}
+                              <div className="space-y-2">
+                                <label className="font-['Roboto'] text-white/60 text-sm">Градиент: Цвет 1</label>
+                                <div className="relative group">
+                                  <input
+                                    type="color"
+                                    value={primaryColor}
+                                    onChange={(e) => setPrimaryColor(e.target.value)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 group-hover:border-[#7c6afa] bg-white/5">
+                                    <div
+                                      className="w-10 h-10 rounded-lg shrink-0"
+                                      style={{ backgroundColor: primaryColor }}
+                                    />
+                                    <span className="font-['Roboto'] text-white text-sm flex-1">
+                                      {primaryColor.toUpperCase()}
+                                    </span>
+                                    <Palette className="w-5 h-5 text-white/40 group-hover:text-[#7c6afa]" />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Gradient Color 2 */}
+                              <div className="space-y-2">
+                                <label className="font-['Roboto'] text-white/60 text-sm">Градиент: Цвет 2</label>
+                                <div className="relative group">
+                                  <input
+                                    type="color"
+                                    value={gradientColor2}
+                                    onChange={(e) => setGradientColor2(e.target.value)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 group-hover:border-[#7c6afa] bg-white/5">
+                                    <div
+                                      className="w-10 h-10 rounded-lg shrink-0"
+                                      style={{ backgroundColor: gradientColor2 }}
+                                    />
+                                    <span className="font-['Roboto'] text-white text-sm flex-1">
+                                      {gradientColor2.toUpperCase()}
+                                    </span>
+                                    <Palette className="w-5 h-5 text-white/40 group-hover:text-[#7c6afa]" />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Background */}
+                              <div className="space-y-2">
+                                <label className="font-['Roboto'] text-white/60 text-sm">Цвет фона</label>
+                                <div className="relative group">
+                                  <input
+                                    type="color"
+                                    value={backgroundColor}
+                                    onChange={(e) => setBackgroundColor(e.target.value)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-white/20 cursor-pointer transition-all duration-300 group-hover:border-[#7c6afa] bg-white/5">
+                                    <div
+                                      className="w-10 h-10 rounded-lg shrink-0 border border-white/20"
+                                      style={{ backgroundColor }}
+                                    />
+                                    <span className="font-['Roboto'] text-white text-sm flex-1">
+                                      {backgroundColor.toUpperCase()}
+                                    </span>
+                                    <Palette className="w-5 h-5 text-white/40 group-hover:text-[#7c6afa]" />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Logo Upload */}
+                    <div className="space-y-3">
+                      <label className="font-['Roboto'] text-white/80 flex items-center gap-2">
+                        <Upload className="w-5 h-5" />
+                        Логотип в центре (опционально)
+                      </label>
+                      <label className="block">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                        <div className="px-6 py-4 border-2 border-dashed border-white/20 rounded-xl text-center cursor-pointer hover:border-[#7c6afa] transition-colors">
+                          {logo ? (
+                            <div className="flex items-center justify-center gap-3">
+                              <img src={logo} alt="Logo" className="w-12 h-12 rounded object-cover" />
+                              <span className="font-['Roboto'] text-white">Логотип загружен</span>
+                            </div>
+                          ) : (
+                            <p className="font-['Roboto'] text-white/60">
+                              Нажмите для загрузки логотипа
+                            </p>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Preview - Redesigned like the image */}
+                  <div className="flex flex-col">
+                    <div className="bg-[#1a1a1a] rounded-3xl p-8 border border-white/10">
+                      <h3 className="font-['Roboto'] text-white text-xl mb-6">
+                        Предварительный просмотр
+                      </h3>
+                      
+                      {/* QR Code Preview */}
+                      <div className="bg-[#2a2a2a] rounded-2xl p-6 mb-6 flex items-center justify-center">
+                        <div 
+                          className="rounded-2xl p-4 shadow-2xl"
+                          style={{ backgroundColor }}
+                        >
+                          <div className="w-64 h-64">
+                            {renderQRWithStyle()}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-3">
+                        {/* Error Display */}
+                        {error && (
+                          <div className="flex items-center gap-2 p-3 bg-[#df5950]/10 border border-[#df5950]/30 rounded-xl text-[#df5950] text-sm">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-['Roboto']">{error}</span>
+                          </div>
+                        )}
+
+                        {/* Success Display */}
+                        {success && (
+                          <div className="flex items-center gap-2 p-3 bg-[#7c6afa]/10 border border-[#7c6afa]/30 rounded-xl text-[#7c6afa] text-sm">
+                            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-['Roboto']">QR-код успешно создан!</span>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={handleNext}
+                          disabled={creating}
+                          className="w-full py-4 rounded-xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          {creating && <Loader2 className="w-5 h-5 animate-spin" />}
+                          {creating ? 'Создание...' : 'Сохранить и продолжить'}
+                        </button>
+                        
+                        <button className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-white font-['Roboto'] transition-all duration-300 hover:bg-white/10 flex items-center justify-center gap-2">
+                          <Download className="w-5 h-5" />
+                          Скачать QR-код
+                        </button>
+                      </div>
+
+                      {/* Tip */}
+                      <div className="mt-6 p-4 bg-[#1a1a2e] rounded-xl border border-[#7c6afa]/20">
+                        <div className="flex gap-3">
+                          <div className="shrink-0 mt-0.5">
+                            <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#7c6afa] to-[#c89afc] flex items-center justify-center">
+                              <span className="text-white text-xs">💡</span>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="font-['Roboto'] text-white/80 text-sm leading-relaxed">
+                              <span className="text-white">Совет:</span> После сохранения вы сможете настроить, куда будет вести этот QR-код: на кастомную страницу или внешнюю ссылку.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Type Selection & Preview */}
+            {step === 3 && (
+              <div className="space-y-8">
+                <div className="text-center mb-8">
+                  <h2 className="font-['Roboto'] text-3xl lg:text-4xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] bg-clip-text text-transparent mb-2">
+                    Тип QR-кода
+                  </h2>
+                  <p className="font-['Roboto'] text-white/60">
+                    Выберит��, куда будет вести ваш QR-код
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                  <button
+                    onClick={() => {
+                      onNavigate('page-editor');
+                    }}
+                    className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
+                  >
+                    <div className="mb-6 flex justify-center">
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc]">
+                        <QrCode className="w-12 h-12 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="font-['Roboto'] text-xl text-white mb-3">
+                      Пользовательская страница
+                    </h3>
+                    <p className="font-['Roboto'] text-white/60 leading-relaxed">
+                      Создайте уникальную страницу с текстом, изображениями, видео и ссылками. 
+                      Полный контроль над дизайном.
+                    </p>
+                    <div className="mt-6 flex items-center gap-2 text-[#c89afc] group-hover:translate-x-2 transition-transform">
+                      <span className="font-['Roboto']">Создать страницу</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onNavigate('qr-settings');
+                    }}
+                    className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
+                  >
+                    <div className="mb-6 flex justify-center">
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc]">
+                        <ArrowRight className="w-12 h-12 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="font-['Roboto'] text-xl text-white mb-3">
+                      Перенаправление на URL
+                    </h3>
+                    <p className="font-['Roboto'] text-white/60 leading-relaxed">
+                      Направьте пользователей на любой сайт: Instagram, TikTok, портфолио, 
+                      магазин или любую другую ссылку.
+                    </p>
+                    <div className="mt-6 flex items-center gap-2 text-[#c89afc] group-hover:translate-x-2 transition-transform">
+                      <span className="font-['Roboto']">Настроить ссылку</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </div>
+                  </button>
+                </div>
+
+                {/* Download Option */}
+                <div className="max-w-2xl mx-auto mt-12 p-6 bg-white/5 rounded-2xl border border-white/10">
+                  <div className="flex items-center gap-4">
+                    <Download className="w-8 h-8 text-[#c89afc]" />
+                    <div className="flex-1">
+                      <p className="font-['Roboto'] text-white mb-1">Готовы скачать?</p>
+                      <p className="font-['Roboto'] text-white/60 text-sm">
+                        Сначала выберите тип QR-кода, затем сможете скачать его в высоком качестве
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/10">
+              <button
+                onClick={handlePrevious}
+                disabled={step === 1}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-['Roboto']">Назад</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-white/60 font-['Roboto'] text-sm">
+                <span>Шаг {step} из 3</span>
               </div>
 
-              <div className="space-y-4">
-                <Button
-                  onClick={handleSave}
-                  className="w-full h-12 bg-gradient-to-r from-[#7c6afa] to-[#c89afc] hover:opacity-90 transition-opacity font-['Roboto']"
-                >
-                  Сохранить и продолжить
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10"
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Скачать QR-код
-                </Button>
-              </div>
-
-              <div className="mt-6 p-4 bg-[#7c6afa]/10 border border-[#7c6afa]/20 rounded-xl">
-                <p className="font-['Roboto'] text-white/70 leading-relaxed">
-                  💡 <span className="text-white">Совет:</span> После сохранения вы сможете настроить,
-                  куда будет вести этот QR-код: на кастомную страницу или внешнюю ссылку.
-                </p>
-              </div>
-            </motion.div>
+              <button
+                onClick={handleNext}
+                disabled={step === 1 && !qrName.trim()}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="font-['Roboto']">
+                  {step === 3 ? 'Готово' : 'Далее'}
+                </span>
+                {step < 3 && <ArrowRight className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>

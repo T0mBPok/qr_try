@@ -1,11 +1,11 @@
-import img924Ed62AC76D4410824260231161F80CPhotoroom1 from "figma:asset/570df3af046b3e68456ff4cefb390c319f764e12.png";
+import img924Ed62AC76D4410824260231161F80CPhotoroom1 from "figma:asset/9d282855eadf5ed88f133ac91c14a91e31615720.png";
 import imgRectangle3 from "figma:asset/0e3d0b8cde1b4b537b85c5310cb19edb0473d193.png";
-import img7Fdec1905F104F7C9Bcc559A85B9Ea72Photoroom1 from "figma:asset/e6813539f17b4e045c58f9a6d3e588e5914c727f.png";
-import imgE81D0A54Eb21488C977BFccc63C0F9BdPhotoroom1 from "figma:asset/1bb58b860479754a6051ce53f029e586aebd2837.png";
+import img7Fdec1905F104F7C9Bcc559A85B9Ea72Photoroom1 from "figma:asset/d172e93496736130643e676214481166b0b39a36.png";
+import imgE81D0A54Eb21488C977BFccc63C0F9BdPhotoroom1 from "figma:asset/2a17dc4793431ca873be8eb9ef3196d3f99b713d.png";
 
 function MainScreenButton() {
   return (
-    <div className="absolute box-border content-stretch flex gap-[10px] items-center justify-center left-[1657px] px-[30px] py-[10px] rounded-[50px] top-[38px]" data-name="main-screen__button">
+    <div className="absolute content-stretch flex items-center justify-center left-[1657px] px-[30px] py-[10px] rounded-[50px] top-[38px]" data-name="main-screen__button">
       <p className="font-['Roboto:Regular',sans-serif] font-normal leading-[1.5] relative shrink-0 text-[16px] text-center text-nowrap text-white whitespace-pre" style={{ fontVariationSettings: "'wdth' 100" }}>
         Зайти в кабинет
       </p>
@@ -15,7 +15,7 @@ function MainScreenButton() {
 
 function MainScreenButton1() {
   return (
-    <div className="absolute bg-gradient-to-r box-border content-stretch flex from-[#7c6afa] gap-[10px] items-center justify-center left-[406px] px-[30px] py-[10px] rounded-[50px] to-[#c89afc] top-[559px]" data-name="main-screen__button">
+    <div className="absolute bg-gradient-to-r content-stretch flex from-[#7c6afa] items-center justify-center left-[406px] px-[30px] py-[10px] rounded-[50px] to-[#c89afc] top-[559px]" data-name="main-screen__button">
       <p className="font-['Roboto:Regular',sans-serif] font-normal leading-[1.5] relative shrink-0 text-[16px] text-center text-nowrap text-white whitespace-pre" style={{ fontVariationSettings: "'wdth' 100" }}>
         Смотри, как это работает
       </p>
@@ -25,19 +25,19 @@ function MainScreenButton1() {
 
 function Group4() {
   return (
-    <div className="absolute contents left-[1182px] top-[194px]">
+    <div className="absolute contents left-[1182px] top-[182px]">
       <div className="absolute left-[1182px] size-[520px] top-[292px]">
         <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 520 520">
-          <circle cx="260" cy="260" id="Ellipse 1" r="235" stroke="url(#paint0_linear_1_224)" strokeWidth="50" />
+          <circle cx="260" cy="260" id="Ellipse 1" r="235" stroke="url(#paint0_linear_1_414)" strokeWidth="50" />
           <defs>
-            <linearGradient gradientUnits="userSpaceOnUse" id="paint0_linear_1_224" x1="53.1492" x2="501.682" y1="-5.64878e-05" y2="33.4325">
+            <linearGradient gradientUnits="userSpaceOnUse" id="paint0_linear_1_414" x1="53.1492" x2="501.682" y1="-5.64878e-05" y2="33.4325">
               <stop stopColor="#C89AFC" />
               <stop offset="1" stopColor="#7C6AFA" />
             </linearGradient>
           </defs>
         </svg>
       </div>
-      <div className="absolute h-[668px] left-[1242px] top-[194px] w-[445px]" data-name="924ed62a-c76d-4410-8242-60231161f80c-Photoroom 1">
+      <div className="absolute h-[680px] left-[1234px] top-[182px] w-[453px]" data-name="924ed62a-c76d-4410-8242-60231161f80c-Photoroom 1">
         <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={img924Ed62AC76D4410824260231161F80CPhotoroom1} />
       </div>
     </div>
@@ -65,7 +65,7 @@ function MainMenu() {
 
 function MainScreenButtonActive() {
   return (
-    <div className="absolute box-border content-stretch flex gap-[10px] h-[43px] items-center justify-center left-[80px] px-[30px] py-[10px] rounded-[50px] top-[43px]" data-name="main-screen__button--active">
+    <div className="absolute content-stretch flex h-[43px] items-center justify-center left-[80px] px-[30px] py-[10px] rounded-[50px] top-[43px]" data-name="main-screen__button--active">
       <p className="font-['Roboto:Bold',sans-serif] font-bold leading-[1.5] relative shrink-0 text-[16px] text-center text-nowrap text-white whitespace-pre" style={{ fontVariationSettings: "'wdth' 100" }}>
         Логотип
       </p>
@@ -156,8 +156,8 @@ function Group3() {
 export default function Component() {
   return (
     <div className="bg-[#040404] relative size-full" data-name="Главная">
-      <div className="absolute blur-[6.5px] filter h-[2914px] left-[calc(50%+527px)] top-[24px] translate-x-[-50%] w-[1942px]" data-name="7fdec190-5f10-4f7c-9bcc-559a85b9ea72-Photoroom 1">
-        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover opacity-25 pointer-events-none size-full" src={img7Fdec1905F104F7C9Bcc559A85B9Ea72Photoroom1} />
+      <div className="absolute blur-[6.5px] filter h-[2497px] left-[calc(50%+48px)] top-[214px] translate-x-[-50%] w-[1664px]" data-name="7fdec190-5f10-4f7c-9bcc-559a85b9ea72-Photoroom 1">
+        <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover opacity-30 pointer-events-none size-full" src={img7Fdec1905F104F7C9Bcc559A85B9Ea72Photoroom1} />
       </div>
       <p className="absolute bg-clip-text font-['Roboto:Bold',sans-serif] font-bold leading-[1.5] left-[881px] text-[48px] text-nowrap top-[1090px] whitespace-pre" style={{ WebkitTextFillColor: "transparent", fontVariationSettings: "'wdth' 100" }}>
         Активируй. Делись. Впечатляй.
@@ -176,10 +176,6 @@ export default function Component() {
         Создавай уникальные цифровые профили, которые активируются при сканировании QR-кода на одежде. Покажи миру, что стоит за твоим стилем: ссылка, фото, видео или послание — всё в одном шве.
       </p>
       <MainScreenButtonActive />
-      <Group />
-      <Group2 />
-      <Group1 />
-      <Group3 />
       <div className="absolute font-['Roboto:Medium',sans-serif] font-medium leading-[1.5] left-[881px] text-[24px] text-white top-[1207px] w-[620px]" style={{ fontVariationSettings: "'wdth' 100" }}>
         <p className="[text-underline-position:from-font] decoration-solid mb-0 underline">Цифровой профиль — всегда с тобой.</p>
         <p className="mb-0">&nbsp;</p>
@@ -200,9 +196,13 @@ export default function Component() {
       <p className="absolute bg-clip-text font-['Roboto:Bold',sans-serif] font-bold leading-[1.5] left-[calc(50%-207px)] text-[48px] text-nowrap top-[1794px] whitespace-pre" style={{ WebkitTextFillColor: "transparent", fontVariationSettings: "'wdth' 100" }}>
         Отзывы клиентов
       </p>
-      <div className="absolute h-[685px] left-[357px] top-[986px] w-[456.488px]" data-name="e81d0a54-eb21-488c-977b-fccc63c0f9bd-Photoroom 1">
+      <div className="absolute h-[724px] left-[202px] top-[1006px] w-[482px]" data-name="e81d0a54-eb21-488c-977b-fccc63c0f9bd-Photoroom 1">
         <img alt="" className="absolute inset-0 max-w-none object-50%-50% object-cover pointer-events-none size-full" src={imgE81D0A54Eb21488C977BFccc63C0F9BdPhotoroom1} />
       </div>
+      <Group />
+      <Group2 />
+      <Group1 />
+      <Group3 />
     </div>
   );
 }

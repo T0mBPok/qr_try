@@ -1,21 +1,32 @@
 import { useState } from 'react';
-import Homepage from './components/Homepage';
-import Dashboard from './components/Dashboard';
-import AuthPage from './components/AuthPage';
-import QRCreator from './components/QRCreator';
-import QRLinkSetup from './components/QRLinkSetup';
-import PageEditor from './components/PageEditor';
-import SubscriptionPage from './components/SubscriptionPage';
+import { Homepage } from './components/Homepage';
+import { Dashboard } from './components/Dashboard';
+import { Auth } from './components/Auth';
+import { QRCreator } from './components/QRCreator';
+import { QRSettings } from './components/QRSettings';
+import { PageEditor } from './components/PageEditor';
+import { Subscription } from './components/Subscription';
+import { PreviewPage } from './components/PreviewPage';
+import { Examples } from './components/Examples';
+import { Instructions } from './components/Instructions';
+import { Contacts } from './components/Contacts';
+import { PublicPage } from './components/PublicPage';
 
-type Page = 'home' | 'auth' | 'dashboard' | 'create-qr' | 'link-setup' | 'editor' | 'subscription';
+type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription' | 'preview' | 'examples' | 'instructions' | 'contacts' | 'public-page';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedQRId, setSelectedQRId] = useState<string | null>(null);
+  const [publicShortCode, setPublicShortCode] = useState<string | null>(null);
 
   const navigate = (page: Page) => {
     setCurrentPage(page);
+  };
+
+  const navigateToPublicPage = (shortCode: string) => {
+    setPublicShortCode(shortCode);
+    setCurrentPage('public-page');
   };
 
   const handleLogin = () => {
@@ -28,60 +39,89 @@ export default function App() {
     navigate('home');
   };
 
-  const handleSelectQR = (qrId: string) => {
+  const handleEditQR = (qrId: string) => {
     setSelectedQRId(qrId);
-    navigate('link-setup');
+    navigate('qr-settings');
   };
 
   const handleEditPage = (qrId: string) => {
     setSelectedQRId(qrId);
-    navigate('editor');
+    navigate('page-editor');
   };
 
   return (
     <div className="min-h-screen bg-[#040404]">
       {currentPage === 'home' && (
         <Homepage 
-          onNavigate={navigate} 
+          onNavigate={navigate}
           isAuthenticated={isAuthenticated}
-          onLogout={handleLogout}
         />
       )}
       {currentPage === 'auth' && (
-        <AuthPage 
-          onLogin={handleLogin} 
+        <Auth 
+          onLogin={handleLogin}
           onNavigate={navigate}
         />
       )}
       {currentPage === 'dashboard' && (
         <Dashboard 
           onNavigate={navigate}
-          onSelectQR={handleSelectQR}
-          onEditPage={handleEditPage}
           onLogout={handleLogout}
+          onEditQR={handleEditQR}
+          onEditPage={handleEditPage}
         />
       )}
-      {currentPage === 'create-qr' && (
+      {currentPage === 'qr-creator' && (
         <QRCreator 
           onNavigate={navigate}
+          onComplete={() => navigate('dashboard')}
         />
       )}
-      {currentPage === 'link-setup' && (
-        <QRLinkSetup 
-          qrId={selectedQRId}
+      {currentPage === 'qr-settings' && (
+        <QRSettings 
           onNavigate={navigate}
+          qrId={selectedQRId}
           onEditPage={handleEditPage}
         />
       )}
-      {currentPage === 'editor' && (
+      {currentPage === 'page-editor' && (
         <PageEditor 
-          qrId={selectedQRId}
           onNavigate={navigate}
+          qrId={selectedQRId}
         />
       )}
       {currentPage === 'subscription' && (
-        <SubscriptionPage 
+        <Subscription 
           onNavigate={navigate}
+        />
+      )}
+      {currentPage === 'preview' && (
+        <PreviewPage 
+          onNavigate={navigate}
+        />
+      )}
+      {currentPage === 'examples' && (
+        <Examples 
+          onNavigate={navigate}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+      {currentPage === 'instructions' && (
+        <Instructions 
+          onNavigate={navigate}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+      {currentPage === 'contacts' && (
+        <Contacts 
+          onNavigate={navigate}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+      {currentPage === 'public-page' && publicShortCode && (
+        <PublicPage 
+          onNavigate={navigate}
+          shortCode={publicShortCode}
         />
       )}
     </div>
