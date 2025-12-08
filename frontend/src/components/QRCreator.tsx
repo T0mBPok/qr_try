@@ -10,6 +10,13 @@ interface QRCreatorProps {
   onComplete: () => void;
 }
 
+interface QROut {
+  id: number;
+  description: string | null;
+  link: string;
+  src: string;
+}
+
 type QRStyle = 'square' | 'rounded' | 'dots' | 'fluid';
 
 export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
@@ -24,6 +31,8 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [description, setDescription] = useState('');  // Для textarea
+  const [createdQr, setCreatedQr] = useState<QROut | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,13 +57,17 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
       
       console.log('📝 Создание QR-кода:', {
         name: qrName,
+        description,  // ← Новое
+        link: null,   // ← Новое (Optional, backend сгенерирует дефолт?)
         style: qrStyle,
         colors: { primary: primaryColor, background: backgroundColor, gradient: useGradient }
       });
 
       const response = await api.qr.create({
         name: qrName,
-        qr_style: {
+        description: description || undefined,  // ← Новое: передаём, если не пусто
+        link: undefined,  // ← Новое: Optional, станет null в JSON
+        qr_style: {  // Без изменений
           pattern: qrStyle,
           eye_style: qrStyle === 'rounded' ? 'rounded' : 'square',
           colors: useGradient 
@@ -73,9 +86,13 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
         }
       });
 
-      console.log('✅ QR-код создан:', response.data.qr_code);
+      const qrData = response.data;  // Предполагаем, что API возвращает QROut напрямую
+      console.log('✅ QR-код создан:', qrData.src);  // ← Изменено: src вместо qr_code
       
-      // Показать успех и перейти к следующему шагу
+      // Сохраняем полный объект для дальнейшего использования
+      setCreatedQr(qrData);
+      
+      // Показать успех и перейти (без изменений)
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
@@ -84,7 +101,9 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
       
     } catch (err: any) {
       console.error('❌ Ошибка создания QR-кода:', err);
-      setError(err.message || 'Не удалось создать QR-код');
+      // Улучшенная обработка ошибок от backend (напр. FastAPI detail)
+      const errorMsg = err.response?.data?.detail?.[0]?.msg || err.message || 'Не удалось создать QR-код';
+      setError(errorMsg);
     } finally {
       setCreating(false);
     }
@@ -127,7 +146,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
     { name: 'Градиент Ocean', primary: '#4facfe', secondary: '#00f2fe', bg: '#ffffff', gradient: true }
   ];
 
-  const qrDataUrl = `https://qrwear.app/${qrName || 'demo'}`;
+  const qrDataUrl = createdQr ? `https://qrwear.app/${createdQr.link}` : `https://qrwear.app/${qrName || 'demo'}`;
 
   // Render real QR code with different styles
   const renderQRWithStyle = () => {
@@ -285,6 +304,8 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                     <textarea
                       className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/40 focus:border-[#7c6afa] focus:outline-none transition-colors font-['Roboto'] resize-none"
                       rows={4}
+                      value={description}  // ← Добавьте
+                      onChange={(e) => setDescription(e.target.value)}  // ← Добавьте
                       placeholder="Краткое описание для чего этот QR-код..."
                     />
                   </div>
@@ -590,20 +611,27 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                           </div>
                         )}
 
-                        <button
-                          onClick={handleNext}
-                          disabled={creating}
-                          className="w-full py-4 rounded-xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          {creating && <Loader2 className="w-5 h-5 animate-spin" />}
-                          {creating ? 'Создание...' : 'Сохранить и продолжить'}
-                        </button>
                         
-                        <button className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-white font-['Roboto'] transition-all duration-300 hover:bg-white/10 flex items-center justify-center gap-2">
+                        
+                        <button 
+                          onClick={() => {
+                            if (createdQr?.src) {
+                              const link = document.createElement('a');
+                              link.href = createdQr.src;
+                              link.download = `${qrName || 'qr-code'}.png`;  // Или .svg, в зависимости от backend
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            } else {
+                              setError('QR-код ещё не создан');
+                            }
+                          }}
+                          className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-white font-['Roboto'] transition-all duration-300 hover:bg-white/10 flex items-center justify-center gap-2"
+                          disabled={!createdQr}
+                        >
                           <Download className="w-5 h-5" />
                           Скачать QR-код
                         </button>
-                      </div>
 
                       {/* Tip */}
                       <div className="mt-6 p-4 bg-[#1a1a2e] rounded-xl border border-[#7c6afa]/20">

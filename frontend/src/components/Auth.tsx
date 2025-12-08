@@ -21,6 +21,7 @@ export function Auth({ onLogin, onNavigate }: AuthProps) {
   });
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   const calculatePasswordStrength = (password: string) => {
     let strength = 0;
@@ -70,14 +71,16 @@ export function Auth({ onLogin, onNavigate }: AuthProps) {
 
     setLoading(true);
     setErrors({});
+    setSuccessMessage(''); // Очистка предыдущих сообщений
 
     try {
       if (isLogin) {
-        // Login
+        // Login — поведение без изменений
         await api.user.login({
           email: formData.email,
           password: formData.password
         });
+        onLogin(); // Успех → сразу на дашборд
       } else {
         // Register
         await api.user.register({
@@ -85,14 +88,26 @@ export function Auth({ onLogin, onNavigate }: AuthProps) {
           password: formData.password,
           username: formData.name
         });
+        
+        // Успех регистрации: показываем сообщение, переключаем на логин, сохраняем email
+        setSuccessMessage('Регистрация прошла успешно! Теперь войдите в аккаунт.');
+        setIsLogin(true);
+        setFormData({
+          email: formData.email, // Сохраняем email для удобства
+          password: '',
+          name: '',
+          confirmPassword: ''
+        });
+        setPasswordStrength(0); // Сброс индикатора силы
       }
-      
-      // Success - notify parent
-      onLogin();
     } catch (err: any) {
       console.error('Auth error:', err);
+      // Для регистрации — специфичное сообщение об ошибке
+      const errorMsg = isLogin 
+        ? 'Неверный email или пароль' 
+        : 'Ошибка регистрации. Возможно, пользователь уже существует.';
       setErrors({ 
-        general: err.message || (isLogin ? 'Неверный email или пароль' : 'Ошибка регистрации. Возможно, пользователь уже существует.') 
+        general: err.message || errorMsg 
       });
     } finally {
       setLoading(false);
@@ -298,6 +313,14 @@ export function Auth({ onLogin, onNavigate }: AuthProps) {
                 <div className="flex items-center gap-2 p-4 bg-[#df5950]/10 border border-[#df5950]/30 rounded-xl text-[#df5950]">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
                   <span className="font-['Roboto'] text-sm">{errors.general}</span>
+                </div>
+              )}
+
+              {/* Success Message (только после регистрации) */}
+              {successMessage && !isLogin && (  // Показывать только если сообщение есть и это был режим регистрации (но после переключения isLogin=true, так что используем флаг или просто по наличию)
+                <div className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400">
+                  <Check className="w-5 h-5 flex-shrink-0" />  {/* Импортируйте Check из lucide-react */}
+                  <span className="font-['Roboto'] text-sm">{successMessage}</span>
                 </div>
               )}
 
