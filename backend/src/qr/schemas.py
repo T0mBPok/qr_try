@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 class QROut(BaseModel):
     id: int
+    name: str
     description: str | None = None
     link: str
     src: str 

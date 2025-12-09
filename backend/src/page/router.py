@@ -33,17 +33,23 @@ async def get_all_pages(user: str = Depends(get_current_user)):
     return pages
 
 @router.put("/{page_id}/", response_model=PageOut)
-async def update_page(page_id: int, page_data: PageUpdate, user: str = Depends(get_current_user)):
+async def update_page(
+    page_id: int,
+    page_data: PageUpdate,
+    user: str = Depends(get_current_user),
+):
     update_data = page_data.model_dump(exclude_unset=True)
-    if 'elements' in update_data:
-        update_data['elements'] = [e.model_dump() for e in update_data['elements']]
-    
+
     updated_count = await PageDAO.update(id=page_id, **update_data)
     if not updated_count:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found or no changes")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Page not found or no changes"
+        )
+
     page = await PageDAO.get_one_or_none(id=page_id)
     return page
+
 
 @router.delete("/{page_id}/")
 async def delete_page(page_id: int, user: str = Depends(get_current_user)):

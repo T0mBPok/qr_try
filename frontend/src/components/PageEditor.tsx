@@ -56,6 +56,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
   const [pageId, setPageId] = useState<string | null>(null);
   const [pageTitle, setPageTitle] = useState('Моя страница');
   const [pageDescription, setPageDescription] = useState('');
+  const [viewOnly, setViewOnly] = useState(false);
   
   const [elements, setElements] = useState<CanvasElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
@@ -89,77 +90,97 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
     }
   }, [qrId]);
 
-  const loadPageData = async () => {
-    if (!qrId) return;
+    const loadPageData = async () => {
+      if (!qrId) return;
+      const check = await api.auth.check();
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('📄 Загрузка страницы для QR:', qrId);
-      
-      // Сначала получаем данные QR чтобы найти связанную страницу
-      const qrResponse = await api.qr.getById(qrId);
-      
-      if (qrResponse.data.page) {
-        // Страница уже существует
-        const page = qrResponse.data.page;
+      if (!check.ok) {
+        console.log("👁 Режим просмотра (без авторизации)");
+        setViewOnly(true);
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log('📄 Загрузка страницы для QR:', qrId);
+
+        // 1️⃣ Получаем QR
+        const qrResponse = await api.qr.getById(Number(qrId));
+        const qr = qrResponse;
+        
+
+        if (!qr || !qr.link) {
+          throw new Error('QR не найден или отсутствует link');
+        }
+
+        // 2️⃣ Достаём page_id из link
+        // пример: http://localhost:9000/page/8
+        const match = qr.link.match(/\/page\/(\d+)/);
+        if (!match) {
+          throw new Error('В QR link не найден page_id');
+        }
+
+        const pageIdFromLink = match[1];
+        console.log('📄 Найден page_id:', pageIdFromLink);
+
+        // 3️⃣ Загружаем страницу по page_id
+        const pageResponse = await api.page.getById(Number(pageIdFromLink));
+        const page = pageResponse;
+
+        if (!page) {
+          throw new Error('Страница не найдена');
+        }
+
+        // 4️⃣ Инициализация состояния
         setPageData(page);
         setPageId(page.id);
-        setPageTitle(page.title);
+        setPageTitle(page.name || 'Моя страница');
         setPageDescription(page.description || '');
-        
-        // Загрузить контент страницы
-        // Загрузка background
+
+        // Background
         if (page.background) {
           const bg = page.background;
 
-          if (bg.type === "color") {
-            setBgType("color");
+          if (bg.type === 'color') {
+            setBgType('color');
             setBgColor(bg.value);
           }
 
-          if (bg.type === "gradient") {
-            setBgType("gradient");
-
-            // Примитивный парсер градиента (если хочешь — напишу идеальный)
-            const match = bg.value.match(/linear-gradient\(135deg, (.*) 0%, (.*) 100%\)/);
+          if (bg.type === 'gradient') {
+            setBgType('gradient');
+            const match = bg.value.match(
+              /linear-gradient\(135deg,\s*(.+?)\s*0%,\s*(.+?)\s*100%\)/
+            );
             if (match) {
-              setBgGradient({
-                from: match[1].trim(),
-                to: match[2].trim(),
-              });
+              setBgGradient({ from: match[1], to: match[2] });
             }
           }
 
-          if (bg.type === "image") {
-            setBgType("image");
+          if (bg.type === 'image') {
+            setBgType('image');
             setBgImage(bg.value);
           }
         }
 
-        // Загрузка элементов
+        // Elements
         if (page.elements) {
           setElements(page.elements);
         }
 
-        
         console.log('✅ Страница загружена:', page);
-      } else {
-        // Страницы нет - создаём новую
-        console.log('📝 Страница не найдена, создаём новую...');
-        await createNewPage();
-      }
-    } catch (err: any) {
-      console.error('❌ Ошибка загрузки страницы:', err);
-      setError(err.message || 'Не удалось загрузить страницу');
-    } finally {
-      setLoading(false);
-      setIsInitialized(true);
-    }
-  };
 
-    const createNewPage = async () => {
+      } catch (err: any) {
+        console.error('❌ Ошибка загрузки страницы:', err);
+        setError(err.message || 'Не удалось загрузить страницу');
+      } finally {
+        setLoading(false);
+        setIsInitialized(true);
+      }
+    };
+
+
+  const createNewPage = async () => {
     if (!qrId) return;
 
     try {
@@ -178,6 +199,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
       const page = response.data;
       setPageData(page);
       setPageId(page.id);
+      setPageTitle(page.name || "Моя страница");
 
       console.log("✅ Новая страница создана:", page);
     } catch (err: any) {
@@ -188,6 +210,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
 
 
   const handleSavePage = async () => {
+    if (viewOnly) return;
     if (!pageId) {
       console.error('❌ Page ID не установлен');
       return;
@@ -270,6 +293,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
   }, [elements, drawings, bgType, bgColor, bgGradient, bgImage, isInitialized, loading]);
 
   const addElement = (type: ElementType) => {
+    if (viewOnly) return;
     const newElement: CanvasElement = {
       id: Date.now().toString(),
       type,
@@ -291,10 +315,12 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
   };
 
   const updateElement = (id: string, updates: Partial<CanvasElement>) => {
+    if (viewOnly) return;
     setElements(elements.map(el => el.id === id ? { ...el, ...updates } : el));
   };
 
   const deleteElement = (id: string) => {
+    if (viewOnly) return;
     setElements(elements.filter(el => el.id !== id));
     if (selectedElement === id) setSelectedElement(null);
   };
