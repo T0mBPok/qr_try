@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, QrCode, Edit, Trash2, ExternalLink, Settings, LogOut, Crown, Download, Eye, Zap, TrendingUp, Sparkles, Activity, AlertTriangle, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import bgImage from 'figma:asset/d172e93496736130643e676214481166b0b39a36.png';
 import { Logo } from './Logo';
 import api from '../services/api';
-
-type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription';
 
 interface QRCodeItem {
   id: string;
@@ -16,18 +15,12 @@ interface QRCodeItem {
   url?: string;
   preview: string;
   description?: string;
-  link?: string; // Добавить если используете
-  src?: string;  // Добавить если используете
+  link?: string;
+  src?: string;
 }
 
-interface DashboardProps {
-  onNavigate: (page: Page) => void;
-  onLogout: () => void;
-  onEditQR: (qrId: string) => void;
-  onEditPage: (qrId: string) => void;
-}
-
-export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: DashboardProps) {
+export function Dashboard() {
+  const navigate = useNavigate();
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +28,6 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Загрузка QR-кодов при монтировании
   useEffect(() => {
     loadQRCodes();
   }, []);
@@ -44,53 +36,22 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('🔄 Загрузка QR-кодов...');
       const response = await api.qr.getAll();
-      
-      console.log('📦 Получен ответ от API:', response);
-      console.log('🔍 Тип response:', typeof response);
-      console.log('🔍 response является массивом?:', Array.isArray(response));
-      console.log('🔍 Первый элемент:', response?.[0]);
-      
-      // Гибкая обработка: если response — массив, используем его; иначе response.data
-      let qrData: any[] = [];
-      if (Array.isArray(response)) {
-        qrData = response;
-      } else if (response?.data && Array.isArray(response.data)) {
-        qrData = response.data;
-      } else {
-        console.warn('⚠️ Ответ от API не содержит данных (не массив)');
-        setQrCodes([]);
-        return;
-      }
-      
-      // Проверяем, что qrData не пустой
-      if (qrData.length === 0) {
-        console.warn('⚠️ Массив QR пустой');
-        setQrCodes([]);
-        return;
-      }
-      
-      // Преобразование в формат QRCodeItem
+      let qrData: any[] = Array.isArray(response) ? response : response?.data ?? [];
       const qrItems: QRCodeItem[] = qrData.map(qr => ({
-        id: qr.id.toString(), // id как string для consistency
-        name: qr.description || `QR #${qr.id}`, // Fallback на description или id
-        scans: 0, // TODO: добавить из API, если есть поле (e.g. qr.scans)
-        createdAt: qr.created_at ? new Date(qr.created_at).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'), // TODO: если есть created_at
-        type: qr.link?.startsWith('https://#/pages/') ? 'custom' : 'redirect', // Логика: #/pages/ = custom page
-        url: qr.link, // Ссылка для редиректа/custom
-        preview: qr.link || '', // Для QRCodeSVG: используем link как value (что кодировать)
+        id: qr.id.toString(),
+        name: qr.description || `QR #${qr.id}`,
+        scans: qr.scans || 0,
+        createdAt: qr.created_at ? new Date(qr.created_at).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'),
+        type: qr.link?.startsWith('https://#/pages/') ? 'custom' : 'redirect',
+        url: qr.link,
+        preview: qr.link || '',
         description: qr.description || '',
-        link: qr.link, // Если нужно для других мест
-        src: qr.src || '', // URL изображения QR (если хочешь <img src={qr.src} /> вместо генерации)
+        link: qr.link,
+        src: qr.src || '',
       }));
-      
       setQrCodes(qrItems);
-      console.log('✅ Загружено QR-кодов:', qrItems.length);
-      console.log('🔍 Пример элемента:', qrItems[0]);
     } catch (err: any) {
-      console.error('❌ Ошибка загрузки QR-кодов:', err);
       setError(err.message || 'Не удалось загрузить QR-коды');
       setQrCodes([]);
     } finally {
@@ -98,24 +59,15 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
     }
   };
 
-  const filteredQRCodes = activeTab === 'all' 
-    ? qrCodes 
-    : qrCodes.filter(qr => qr.type === activeTab);
+  const filteredQRCodes = activeTab === 'all' ? qrCodes : qrCodes.filter(qr => qr.type === activeTab);
 
   const handleDelete = async (id: string) => {
     try {
       setDeleting(true);
-      console.log('🗑️ Удаление QR-кода:', id);
-      
       await api.qr.delete(id);
-      
-      // Обновить локальный state
       setQrCodes(qrCodes.filter(qr => qr.id !== id));
       setDeleteConfirm(null);
-      
-      console.log('✅ QR-код удален');
     } catch (err: any) {
-      console.error('❌ Ошибка удаления:', err);
       alert('Не удалось удалить QR-код: ' + err.message);
     } finally {
       setDeleting(false);
@@ -124,14 +76,18 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
 
   const handleLogout = async () => {
     try {
-      console.log('👋 Выход из системы...');
       await api.user.logout();
-      onLogout();
-    } catch (err: any) {
-      console.error('❌ Ошибка выхода:', err);
-      // Даже если запрос failed, выполняем logout на frontend
-      onLogout();
+    } finally {
+      navigate('/auth');
     }
+  };
+
+  const handleEditQR = (id: string) => {
+    navigate(`/qr/${id}/settings`);
+  };
+
+  const handleEditPage = (id: string) => {
+    navigate(`/page/${id}`);
   };
 
   const qrToDelete = qrCodes.find(qr => qr.id === deleteConfirm);
@@ -233,7 +189,7 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
           <div className="container mx-auto px-4 lg:px-8 py-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <button 
-                onClick={() => onNavigate('home')}
+                onClick={() => navigate('/')}
                 className="transition-all duration-300 hover:scale-105"
               >
                 <Logo variant="gradient" size="md" />
@@ -241,7 +197,7 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
 
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => onNavigate('subscription')}
+                  onClick={() => navigate('/subscription')}
                   className="group relative flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#c89afc] text-[#c89afc] overflow-hidden transition-all duration-300 hover:scale-105"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-[#7c6afa]/20 to-[#c89afc]/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -286,7 +242,7 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
                   </button>
                   
                   <button 
-                    onClick={() => onNavigate('subscription')}
+                    onClick={() => navigate('/subscription')}
                     className="group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/10"
                   >
                     <Settings className="w-5 h-5" />
@@ -370,7 +326,7 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
 
               {/* Create New Button - More Futuristic */}
               <button
-                onClick={() => onNavigate('qr-creator')}
+                onClick={() => navigate('/qr/creator')}
                 className="group relative w-full md:w-auto mb-8 flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] text-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.02]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#c89afc] to-[#7c6afa] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -566,7 +522,7 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
                         : `Нет ${activeTab === 'custom' ? 'пользовательских' : 'перенаправлений'} QR-кодов`}
                     </p>
                     <button
-                      onClick={() => onNavigate('qr-creator')}
+                      onClick={() => navigate('/qr/creator')}
                       className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-[#c89afc] to-[#7c6afa] opacity-0 group-hover:opacity-100 transition-opacity" />
