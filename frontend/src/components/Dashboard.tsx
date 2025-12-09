@@ -15,6 +15,7 @@ interface QRCodeItem {
   type: 'custom' | 'redirect';
   url?: string;
   preview: string;
+  description?: string; // Добавлено для поддержки description из backend
 }
 
 interface DashboardProps {
@@ -45,14 +46,17 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
       console.log('🔄 Загрузка QR-кодов...');
       const response = await api.qr.getAll();
       
-      // Преобразуем данные с backend в формат Dashboard
-      const qrItems: QRCodeItem[] = response.data.qr_codes.map(qr => ({
+      // Адаптировано под структуру backend: предполагаем, что response.data - это массив объектов QROut
+      // с полями id, name, description, link, src
+      const qrItems: QRCodeItem[] = response.data.map(qr => ({
         id: qr.id,
         name: qr.name,
-        scans: qr.scan_count,
-        createdAt: new Date(qr.created_at).toLocaleDateString('ru-RU'),
-        type: 'custom', // TODO: определить по qr_style или другому полю
-        preview: qr.qr_url,
+        scans: 0, // Нет scan_count в backend, устанавливаем 0 по умолчанию
+        createdAt: new Date().toLocaleDateString('ru-RU'), // Нет created_at, используем текущую дату
+        type: 'custom', // По умолчанию 'custom', так как тип не указан в backend
+        url: qr.link, // link из backend -> url
+        preview: qr.src, // src из backend -> preview
+        description: qr.description, // Добавляем description, если нужно использовать в UI
       }));
       
       setQrCodes(qrItems);
