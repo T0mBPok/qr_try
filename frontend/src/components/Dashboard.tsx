@@ -49,31 +49,46 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
       const response = await api.qr.getAll();
       
       console.log('📦 Получен ответ от API:', response);
+      console.log('🔍 Тип response:', typeof response);
+      console.log('🔍 response является массивом?:', Array.isArray(response));
+      console.log('🔍 Первый элемент:', response?.[0]);
       
-      // Бэкенд возвращает массив QROut в data
-      if (!response || !response.data) {
-        console.warn('⚠️ Ответ от API не содержит данных');
+      // Гибкая обработка: если response — массив, используем его; иначе response.data
+      let qrData: any[] = [];
+      if (Array.isArray(response)) {
+        qrData = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        qrData = response.data;
+      } else {
+        console.warn('⚠️ Ответ от API не содержит данных (не массив)');
         setQrCodes([]);
         return;
       }
       
-      // Проверяем, что data является массивом
-      const qrData = Array.isArray(response.data) ? response.data : [];
+      // Проверяем, что qrData не пустой
+      if (qrData.length === 0) {
+        console.warn('⚠️ Массив QR пустой');
+        setQrCodes([]);
+        return;
+      }
       
-      // Преобразование в формат QRCodeItem для Dashboard
+      // Преобразование в формат QRCodeItem
       const qrItems: QRCodeItem[] = qrData.map(qr => ({
-        id: qr.id,
-        name: qr.name,
-        scans: 0, // Пока нет данных о сканированиях в QROut
-        createdAt: new Date().toLocaleDateString('ru-RU'), // Нет created_at в QROut
-        type: qr.link ? 'redirect' : 'custom', // Определяем тип по наличию ссылки
-        url: qr.link, // Ссылка для перенаправления
-        preview: qr.src || '', // URL изображения QR-кода
-        description: qr.description || '', // Описание из бэкенда
+        id: qr.id.toString(), // id как string для consistency
+        name: qr.description || `QR #${qr.id}`, // Fallback на description или id
+        scans: 0, // TODO: добавить из API, если есть поле (e.g. qr.scans)
+        createdAt: qr.created_at ? new Date(qr.created_at).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU'), // TODO: если есть created_at
+        type: qr.link?.startsWith('https://#/pages/') ? 'custom' : 'redirect', // Логика: #/pages/ = custom page
+        url: qr.link, // Ссылка для редиректа/custom
+        preview: qr.link || '', // Для QRCodeSVG: используем link как value (что кодировать)
+        description: qr.description || '',
+        link: qr.link, // Если нужно для других мест
+        src: qr.src || '', // URL изображения QR (если хочешь <img src={qr.src} /> вместо генерации)
       }));
       
       setQrCodes(qrItems);
       console.log('✅ Загружено QR-кодов:', qrItems.length);
+      console.log('🔍 Пример элемента:', qrItems[0]);
     } catch (err: any) {
       console.error('❌ Ошибка загрузки QR-кодов:', err);
       setError(err.message || 'Не удалось загрузить QR-коды');
@@ -81,10 +96,6 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
     } finally {
       setLoading(false);
     }
-    console.log('🔍 Тип response:', typeof response);
-    console.log('🔍 Тип response.data:', typeof response.data);
-    console.log('🔍 response.data является массивом?:', Array.isArray(response.data));
-    console.log('🔍 Первый элемент:', response.data?.[0]);
   };
 
   const filteredQRCodes = activeTab === 'all' 
