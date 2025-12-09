@@ -92,7 +92,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
 
     const loadPageData = async () => {
       if (!qrId) return;
-      const check = await api.auth.check();
+      const check = await api.user.checkAuth();
 
       if (!check.ok) {
         console.log("👁 Режим просмотра (без авторизации)");
