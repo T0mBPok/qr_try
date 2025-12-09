@@ -30,23 +30,23 @@ export function Contacts({ onNavigate, isAuthenticated }: ContactsProps) {
     {
       icon: Mail,
       title: 'Email',
-      value: 'support@qrwear.com',
-      link: 'mailto:support@qrwear.com',
+      value: 'ZemtsevIA@yandex.ru',
+      link: 'mailto:ZemtsevIA@yandex.ru',
       color: '#7c6afa',
       description: 'Ответим в течение 24 часов'
     },
     {
       icon: Phone,
       title: 'Телефон',
-      value: '+7 (999) 123-45-67',
-      link: 'tel:+79991234567',
+      value: '+7 (913) 107-12-07',
+      link: 'tel:+79131071207',
       color: '#c89afc',
       description: 'Пн-Пт, 10:00 - 19:00 МСК'
     },
     {
       icon: MapPin,
       title: 'Адрес',
-      value: 'Москва, ул. Примерная, 123',
+      value: 'Томск, ул. Вершинина, 74',
       link: '#',
       color: '#df5950',
       description: 'Офис работает по записи'
@@ -54,8 +54,8 @@ export function Contacts({ onNavigate, isAuthenticated }: ContactsProps) {
     {
       icon: MessageCircle,
       title: 'Telegram',
-      value: '@qrwear_support',
-      link: 'https://t.me/qrwear_support',
+      value: '@ZemeC44',
+      link: 'https://t.me/ZemeC44',
       color: '#7c6afa',
       description: 'Быстрая поддержка в мессенджере'
     }

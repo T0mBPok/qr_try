@@ -15,7 +15,9 @@ interface QRCodeItem {
   type: 'custom' | 'redirect';
   url?: string;
   preview: string;
-  description?: string; // Добавлено для поддержки description из backend
+  description?: string;
+  link?: string; // Добавить если используете
+  src?: string;  // Добавить если используете
 }
 
 interface DashboardProps {
@@ -46,17 +48,28 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
       console.log('🔄 Загрузка QR-кодов...');
       const response = await api.qr.getAll();
       
-      // Адаптировано под структуру backend: предполагаем, что response.data - это массив объектов QROut
-      // с полями id, name, description, link, src
-      const qrItems: QRCodeItem[] = response.data.map(qr => ({
+      console.log('📦 Получен ответ от API:', response);
+      
+      // Бэкенд возвращает массив QROut в data
+      if (!response || !response.data) {
+        console.warn('⚠️ Ответ от API не содержит данных');
+        setQrCodes([]);
+        return;
+      }
+      
+      // Проверяем, что data является массивом
+      const qrData = Array.isArray(response.data) ? response.data : [];
+      
+      // Преобразование в формат QRCodeItem для Dashboard
+      const qrItems: QRCodeItem[] = qrData.map(qr => ({
         id: qr.id,
         name: qr.name,
-        scans: 0, // Нет scan_count в backend, устанавливаем 0 по умолчанию
-        createdAt: new Date().toLocaleDateString('ru-RU'), // Нет created_at, используем текущую дату
-        type: 'custom', // По умолчанию 'custom', так как тип не указан в backend
-        url: qr.link, // link из backend -> url
-        preview: qr.src, // src из backend -> preview
-        description: qr.description, // Добавляем description, если нужно использовать в UI
+        scans: 0, // Пока нет данных о сканированиях в QROut
+        createdAt: new Date().toLocaleDateString('ru-RU'), // Нет created_at в QROut
+        type: qr.link ? 'redirect' : 'custom', // Определяем тип по наличию ссылки
+        url: qr.link, // Ссылка для перенаправления
+        preview: qr.src || '', // URL изображения QR-кода
+        description: qr.description || '', // Описание из бэкенда
       }));
       
       setQrCodes(qrItems);
@@ -64,9 +77,14 @@ export function Dashboard({ onNavigate, onLogout, onEditQR, onEditPage }: Dashbo
     } catch (err: any) {
       console.error('❌ Ошибка загрузки QR-кодов:', err);
       setError(err.message || 'Не удалось загрузить QR-коды');
+      setQrCodes([]);
     } finally {
       setLoading(false);
     }
+    console.log('🔍 Тип response:', typeof response);
+    console.log('🔍 Тип response.data:', typeof response.data);
+    console.log('🔍 response.data является массивом?:', Array.isArray(response.data));
+    console.log('🔍 Первый элемент:', response.data?.[0]);
   };
 
   const filteredQRCodes = activeTab === 'all' 
