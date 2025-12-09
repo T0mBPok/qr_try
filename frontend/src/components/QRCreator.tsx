@@ -6,7 +6,7 @@ import api from '../services/api';
 type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription';
 
 interface QRCreatorProps {
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: Page, qrId?: number) => void;  // Добавлен qrId для передачи в page-editor/qr-settings
   onComplete: () => void;
 }
 
@@ -86,7 +86,12 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
         }
       });
 
-      const qrData = response.data;  // Предполагаем, что API возвращает QROut напрямую
+      // Гибкая обработка: response.data или прямой response
+      const qrData = response?.data ?? response;
+      if (!qrData) {
+        throw new Error('Нет данных о созданном QR-коде');
+      }
+
       console.log('✅ QR-код создан:', qrData.src);  // ← Изменено: src вместо qr_code
       
       // Сохраняем полный объект для дальнейшего использования
@@ -221,6 +226,11 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
         }
       />
     );
+  };
+
+  // Полный URL для src (если relative)
+  const getFullSrc = (src: string) => {
+    return src.startsWith('http') ? src : `https://qrwear.app${src}`;
   };
 
   return (
@@ -616,8 +626,9 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                         <button 
                           onClick={() => {
                             if (createdQr?.src) {
+                              const fullSrc = getFullSrc(createdQr.src);
                               const link = document.createElement('a');
-                              link.href = createdQr.src;
+                              link.href = fullSrc;
                               link.download = `${qrName || 'qr-code'}.png`;  // Или .svg, в зависимости от backend
                               document.body.appendChild(link);
                               link.click();
@@ -627,10 +638,10 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                             }
                           }}
                           className="w-full py-4 rounded-xl bg-white/5 border border-white/10 text-white font-['Roboto'] transition-all duration-300 hover:bg-white/10 flex items-center justify-center gap-2"
-                          disabled={!createdQr}
+                          disabled={!createdQr || creating}
                         >
-                          <Download className="w-5 h-5" />
-                          Скачать QR-код
+                          {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                          {creating ? 'Создание...' : 'Скачать QR-код'}
                         </button>
                       </div>
 
@@ -656,7 +667,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
             )}
 
             {/* Step 3: Type Selection & Preview */}
-            {step === 3 && (
+            {step === 3 && createdQr && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h2 className="font-['Roboto'] text-3xl lg:text-4xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] bg-clip-text text-transparent mb-2">
@@ -670,7 +681,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                 <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                   <button
                     onClick={() => {
-                      onNavigate('page-editor');
+                      onNavigate('page-editor', createdQr.id);  // ← Передаём id
                     }}
                     className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
                   >
@@ -694,7 +705,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
 
                   <button
                     onClick={() => {
-                      onNavigate('qr-settings');
+                      onNavigate('qr-settings', createdQr.id);  // ← Передаём id
                     }}
                     className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
                   >
@@ -749,13 +760,11 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
 
               <button
                 onClick={handleNext}
-                disabled={step === 1 && !qrName.trim()}
+                disabled={(step === 1 && !qrName.trim()) || (step === 2 && creating)}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="font-['Roboto']">
-                  {step === 3 ? 'Готово' : 'Далее'}
-                </span>
-                {step < 3 && <ArrowRight className="w-5 h-5" />}
+                {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : <span className="font-['Roboto']">{step === 3 ? 'Готово' : 'Далее'}</span>}
+                {step < 3 && !creating && <ArrowRight className="w-5 h-5" />}
               </button>
             </div>
           </div>
