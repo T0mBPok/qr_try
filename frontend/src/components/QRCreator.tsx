@@ -151,7 +151,9 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
     { name: 'Градиент Ocean', primary: '#4facfe', secondary: '#00f2fe', bg: '#ffffff', gradient: true }
   ];
 
-  const qrDataUrl = createdQr ? `https://qrwear.app/${createdQr.link}` : `https://qrwear.app/${qrName || 'demo'}`;
+  const qrDataUrl = createdQr
+  ? createdQr.link
+  : `https://qrwear.app/${qrName || 'demo'}`;
 
   // Render real QR code with different styles
   const renderQRWithStyle = () => {

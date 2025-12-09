@@ -47,7 +47,7 @@ export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
       console.log('📥 Загрузка данных QR-кода:', qrId);
       const response = await api.qr.getById(qrId);
       
-      const qr = response.data.qr_code;
+      const qr = response;
       setQrData(qr);
       setQrName(qr.name);
       setIsActive(qr.is_active);

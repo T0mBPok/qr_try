@@ -20,7 +20,10 @@ export default function App() {
   const [selectedQRId, setSelectedQRId] = useState<string | null>(null);
   const [publicShortCode, setPublicShortCode] = useState<string | null>(null);
 
-  const navigate = (page: Page) => {
+  const navigate = (page: Page, qrId?: string) => {
+    if (qrId) {
+      setSelectedQRId(qrId);
+    }
     setCurrentPage(page);
   };
 

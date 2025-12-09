@@ -94,7 +94,7 @@ async def get_all(user=Depends(get_current_user)):
 # =====================
 @router.get("/{qr_id}/", response_model=QROut)
 async def get_one(qr_id: int, user=Depends(get_current_user)):
-    qr = await QRDAO.get_one_or_none(id=qr_id, user_id=user.id)
+    qr = await QRDAO.get_one_or_none(id=qr_id)
     if not qr:
         raise HTTPException(404, "QR not found")
 
