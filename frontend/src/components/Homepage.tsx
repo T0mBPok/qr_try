@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import {userAPI} from "../services/api"
 import img924Ed62AC76D4410824260231161F80CPhotoroom1 from "figma:asset/9d282855eadf5ed88f133ac91c14a91e31615720.png";
 import imgE81D0A54Eb21488C977BFccc63C0F9BdPhotoroom1 from "figma:asset/2a17dc4793431ca873be8eb9ef3196d3f99b713d.png";
 import { Logo } from './Logo';
@@ -6,7 +8,22 @@ import bgImage from 'figma:asset/d172e93496736130643e676214481166b0b39a36.png';
 
 export function Homepage() {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await userAPI.checkAuth();
+        setIsAuthenticated(response.data.authenticated);
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    }
+
+    checkAuth();
+  }, []);
+
+  console.log("auth - ", isAuthenticated);
   return (
     <div className="relative min-h-screen bg-[#040404] overflow-hidden">
       {/* Futuristic Animated Background */}
@@ -66,7 +83,7 @@ export function Homepage() {
 
             {/* CTA Button */}
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/auth')}
               className="px-6 sm:px-8 py-2 sm:py-2.5 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
             >
               <span className="font-['Roboto']">
@@ -170,8 +187,8 @@ export function Homepage() {
                           border: `${3 - i * 0.5}px solid ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}`,
                           opacity: 0.7 - i * 0.1,
                           boxShadow: `0 0 ${20 - i * 3}px ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}, inset 0 0 ${15 - i * 2}px ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}`,
-                          animation: `pulse ${1.5 + i * 0.4}s ease-in-out infinite`,
-                          animationDelay: `${i * 0.2}s`
+                          animation: `pulse ${1.5 + i * 0.4}s ease-in-out ${i * 0.2}s infinite`,
+                          // animationDelay: `${i * 0.2}s`
                         }}
                       />
                     ))}
@@ -202,8 +219,8 @@ export function Homepage() {
                         background: `linear-gradient(to top, ${i % 2 === 0 ? 'rgba(124, 106, 250, 0.9)' : 'rgba(200, 154, 252, 0.9)'} 0%, ${i % 2 === 0 ? 'rgba(124, 106, 250, 0.5)' : 'rgba(200, 154, 252, 0.5)'} 50%, transparent 100%)`,
                         opacity: 0.6,
                         boxShadow: `0 0 10px ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}`,
-                        animation: `rise ${1.5 + Math.random() * 1.5}s ease-out infinite`,
-                        animationDelay: `${i * 0.15}s`,
+                        animation: `rise ${1.5 + Math.random() * 1.5}s ease-out ${i * 0.15}s infinite`,
+                        // animationDelay: `${i * 0.15}s`,
                         filter: 'blur(1px)'
                       }}
                     />
@@ -223,8 +240,8 @@ export function Homepage() {
                         height: `${3 + Math.random() * 8}px`,
                         background: i % 3 === 0 ? '#7c6afa' : i % 3 === 1 ? '#c89afc' : '#df5950',
                         boxShadow: `0 0 ${10 + Math.random() * 15}px ${i % 3 === 0 ? '#7c6afa' : i % 3 === 1 ? '#c89afc' : '#df5950'}`,
-                        animation: `float ${2 + Math.random() * 3}s ease-in-out infinite`,
-                        animationDelay: `${Math.random() * 2}s`,
+                        animation: `float ${2 + Math.random() * 3}s ease-in-out ${Math.random() * 2}s infinite`,
+                        // animationDelay: `${Math.random() * 2}s`,
                         opacity: 0.8,
                         filter: 'blur(0.5px)'
                       }}
