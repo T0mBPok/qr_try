@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, QrCode, Download, Palette, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
@@ -6,7 +7,6 @@ import api from '../services/api';
 type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription';
 
 interface QRCreatorProps {
-  onNavigate: (page: Page, qrId?: number) => void;  // Добавлен qrId для передачи в page-editor/qr-settings
   onComplete: () => void;
 }
 
@@ -19,7 +19,8 @@ interface QROut {
 
 type QRStyle = 'square' | 'rounded' | 'dots' | 'fluid';
 
-export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
+export function QRCreator({onComplete }: QRCreatorProps) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [qrName, setQrName] = useState('');
   const [qrStyle, setQrStyle] = useState<QRStyle>('square');
@@ -242,7 +243,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
 
       {/* Back button */}
       <button
-        onClick={() => onNavigate('dashboard')}
+        onClick={() => navigate('/dashboard')}
         className="absolute top-4 left-4 sm:top-8 sm:left-8 z-20 px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
       >
         <span className="font-['Roboto']">← К панели</span>
@@ -683,7 +684,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
                 <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                   <button
                     onClick={() => {
-                      onNavigate('page-editor', createdQr.id);  // ← Передаём id
+                      navigate('/page-editor', createdQr.id);  // ← Передаём id
                     }}
                     className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
                   >
@@ -707,7 +708,7 @@ export function QRCreator({ onNavigate, onComplete }: QRCreatorProps) {
 
                   <button
                     onClick={() => {
-                      onNavigate('qr-settings', createdQr.id);  // ← Передаём id
+                      navigate(`/qr/${createdQr.id}/settings`, { state: { qr: createdQr } });  // ← Передаём id
                     }}
                     className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
                   >

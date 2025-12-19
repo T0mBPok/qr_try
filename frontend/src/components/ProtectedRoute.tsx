@@ -13,7 +13,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const check = async () => {
       try {
         const res = await api.user.checkAuth();
-        setIsAuthenticated(res.ok);
+        setIsAuthenticated(res.data.authenticated); // Берём именно поле authenticated
       } catch {
         setIsAuthenticated(false);
       }

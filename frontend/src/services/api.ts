@@ -214,7 +214,7 @@ export interface ApiError {
 async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<T> {
+): Promise<T | { status: number }> {
   const url = `${API_BASE_URL}${endpoint}`;
   const method = options.method || 'GET';
   
@@ -237,6 +237,11 @@ async function fetchAPI<T>(
 
   try {
     const response = await fetch(url, config);
+
+    if (response.status === 401) {
+      logError(method, endpoint, new Error('Unauthorized (401)'));
+      return { status: 401 } as any; // не кидаем исключение, фронт сможет обработать
+    }
 
     // Обработка ошибок HTTP
     if (!response.ok) {
@@ -317,10 +322,18 @@ export const userAPI = {
    * Проверка статуса авторизации пользователя
    */
   checkAuth: async (): Promise<ApiResponse<{ authenticated: boolean; user?: User }>> => {
-    const response = await fetchAPI('/user/check/', {
-      method: 'GET',
-    });
-    return response;
+    const response = await fetchAPI('/user/check/', { method: 'GET' });
+
+    if ((response as any).status === 401) {
+      return { data: { authenticated: false } };
+    }
+
+    return {
+      data: {
+        authenticated: true,
+        user: (response as any).user,
+      },
+    };
   },
 
   /**

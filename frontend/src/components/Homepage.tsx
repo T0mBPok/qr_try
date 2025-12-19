@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import {userAPI} from "../services/api"
 import img924Ed62AC76D4410824260231161F80CPhotoroom1 from "figma:asset/9d282855eadf5ed88f133ac91c14a91e31615720.png";
 import imgE81D0A54Eb21488C977BFccc63C0F9BdPhotoroom1 from "figma:asset/2a17dc4793431ca873be8eb9ef3196d3f99b713d.png";
 import { Logo } from './Logo';
@@ -6,6 +8,20 @@ import bgImage from 'figma:asset/d172e93496736130643e676214481166b0b39a36.png';
 
 export function Homepage() {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await userAPI.checkAuth();
+        setIsAuthenticated(response.data.authenticated);
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    }
+
+    checkAuth();
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-[#040404] overflow-hidden">

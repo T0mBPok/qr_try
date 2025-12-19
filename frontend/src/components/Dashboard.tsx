@@ -326,7 +326,7 @@ export function Dashboard() {
 
               {/* Create New Button - More Futuristic */}
               <button
-                onClick={() => navigate('/qr/creator')}
+                onClick={() => navigate('/qr/create')}
                 className="group relative w-full md:w-auto mb-8 flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] text-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.02]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-[#c89afc] to-[#7c6afa] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
