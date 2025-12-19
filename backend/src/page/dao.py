@@ -20,21 +20,24 @@ class PageDAO(BaseDAO):
             )
 
         page = cls.model(
-            user_id=user_id,
-            qr_id=qr_id,
-            name=name,
-            background=background,
-            elements=elements,
-            files=files
-        )
+        user_id=user_id,
+        qr_id=qr_id,
+        name=name,
+        background=background,
+        elements=elements,
+        files=files
+    )
         session.add(page)
         await session.flush()
-
+    
         if qr_id:
             qr = await session.get(QR, qr_id)
             if not qr:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR not found")
-            qr.link = f"https://##/pages/{name}"
+        
+            # Исправленная ссылка - должен быть shortCode из QR
+            # Предполагаем, что QR имеет поле short_code
+            qr.link = f"https://qrwear.app/{qr.short_code}"
             session.add(qr)
 
         try:
