@@ -12,3 +12,6 @@ class QR(Base):
     
     user: Mapped['User'] = relationship('User', back_populates='qrs')
     page: Mapped["Page"] = relationship('Page', back_populates='qr')
+
+    short_code: Mapped[str_uniq] = mapped_column(unique=True)
+    link: Mapped[str | None] = mapped_column(nullable=True)

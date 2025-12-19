@@ -68,9 +68,15 @@ from typing import Literal, Union, Optional, List
 class PageCreate(BaseModel):
     qr_id: int | None = None
     name: str
-    background: dict = Field(default_factory=lambda: {"type": "color", "value": "#ffffff"})
+    title: str = ""
+    description: str | None = None
+    background: dict = Field(default_factory=lambda: {"type": "color", "value": "#040404"})
     elements: list[dict] | None = None
     files: List[str] = []
+    theme_settings: dict = Field(default_factory=lambda: {
+        "textColor": "#ffffff",
+        "accentColor": "#7c6afa"
+    })
 
 class PageUpdate(BaseModel):
     qr_id: int | None = None

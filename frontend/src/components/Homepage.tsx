@@ -1,18 +1,29 @@
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import {userAPI} from "../services/api"
 import img924Ed62AC76D4410824260231161F80CPhotoroom1 from "figma:asset/9d282855eadf5ed88f133ac91c14a91e31615720.png";
-import imgRectangle3 from "figma:asset/0e3d0b8cde1b4b537b85c5310cb19edb0473d193.png";
-import img7Fdec1905F104F7C9Bcc559A85B9Ea72Photoroom1 from "figma:asset/d172e93496736130643e676214481166b0b39a36.png";
 import imgE81D0A54Eb21488C977BFccc63C0F9BdPhotoroom1 from "figma:asset/2a17dc4793431ca873be8eb9ef3196d3f99b713d.png";
 import { Logo } from './Logo';
 import bgImage from 'figma:asset/d172e93496736130643e676214481166b0b39a36.png';
 
-type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription' | 'examples' | 'instructions' | 'contacts';
+export function Homepage() {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-interface HomepageProps {
-  onNavigate: (page: Page) => void;
-  isAuthenticated: boolean;
-}
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await userAPI.checkAuth();
+        setIsAuthenticated(response.data.authenticated);
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    }
 
-export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
+    checkAuth();
+  }, []);
+
+  console.log("auth - ", isAuthenticated);
   return (
     <div className="relative min-h-screen bg-[#040404] overflow-hidden">
       {/* Futuristic Animated Background */}
@@ -56,7 +67,7 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
           <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
             {/* Logo */}
             <button
-              onClick={() => onNavigate('home')}
+              onClick={() => navigate('/')}
               className="transition-all duration-300 hover:scale-105"
             >
               <Logo variant="white" size="md" />
@@ -64,15 +75,15 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-8 font-['Roboto'] text-white">
-              <button onClick={() => onNavigate('home')} className="hover:text-[#c89afc] transition-colors duration-300">Главная</button>
-              <button onClick={() => onNavigate('examples')} className="hover:text-[#c89afc] transition-colors duration-300">Примеры QR</button>
-              <button onClick={() => onNavigate('instructions')} className="hover:text-[#c89afc] transition-colors duration-300\">Инструкция</button>
-              <button onClick={() => onNavigate('contacts')} className="hover:text-[#c89afc] transition-colors duration-300">Контакты</button>
+              <button onClick={() => navigate('/')} className="hover:text-[#c89afc] transition-colors duration-300">Главная</button>
+              <button onClick={() => navigate('/examples')} className="hover:text-[#c89afc] transition-colors duration-300">Примеры QR</button>
+              <button onClick={() => navigate('/instructions')} className="hover:text-[#c89afc] transition-colors duration-300\">Инструкция</button>
+              <button onClick={() => navigate('/contacts')} className="hover:text-[#c89afc] transition-colors duration-300">Контакты</button>
             </div>
 
             {/* CTA Button */}
             <button
-              onClick={() => onNavigate(isAuthenticated ? 'dashboard' : 'auth')}
+              onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/auth')}
               className="px-6 sm:px-8 py-2 sm:py-2.5 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
             >
               <span className="font-['Roboto']">
@@ -100,7 +111,7 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
             </p>
 
             <button 
-              onClick={() => onNavigate(isAuthenticated ? 'qr-creator' : 'auth')}
+              onClick={() => navigate("/qr/create")}
               className="px-10 py-4 rounded-full bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 hover:scale-105"
             >
               Смотри, как это работает
@@ -176,8 +187,8 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
                           border: `${3 - i * 0.5}px solid ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}`,
                           opacity: 0.7 - i * 0.1,
                           boxShadow: `0 0 ${20 - i * 3}px ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}, inset 0 0 ${15 - i * 2}px ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}`,
-                          animation: `pulse ${1.5 + i * 0.4}s ease-in-out infinite`,
-                          animationDelay: `${i * 0.2}s`
+                          animation: `pulse ${1.5 + i * 0.4}s ease-in-out ${i * 0.2}s infinite`,
+                          // animationDelay: `${i * 0.2}s`
                         }}
                       />
                     ))}
@@ -208,8 +219,8 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
                         background: `linear-gradient(to top, ${i % 2 === 0 ? 'rgba(124, 106, 250, 0.9)' : 'rgba(200, 154, 252, 0.9)'} 0%, ${i % 2 === 0 ? 'rgba(124, 106, 250, 0.5)' : 'rgba(200, 154, 252, 0.5)'} 50%, transparent 100%)`,
                         opacity: 0.6,
                         boxShadow: `0 0 10px ${i % 2 === 0 ? '#7c6afa' : '#c89afc'}`,
-                        animation: `rise ${1.5 + Math.random() * 1.5}s ease-out infinite`,
-                        animationDelay: `${i * 0.15}s`,
+                        animation: `rise ${1.5 + Math.random() * 1.5}s ease-out ${i * 0.15}s infinite`,
+                        // animationDelay: `${i * 0.15}s`,
                         filter: 'blur(1px)'
                       }}
                     />
@@ -229,8 +240,8 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
                         height: `${3 + Math.random() * 8}px`,
                         background: i % 3 === 0 ? '#7c6afa' : i % 3 === 1 ? '#c89afc' : '#df5950',
                         boxShadow: `0 0 ${10 + Math.random() * 15}px ${i % 3 === 0 ? '#7c6afa' : i % 3 === 1 ? '#c89afc' : '#df5950'}`,
-                        animation: `float ${2 + Math.random() * 3}s ease-in-out infinite`,
-                        animationDelay: `${Math.random() * 2}s`,
+                        animation: `float ${2 + Math.random() * 3}s ease-in-out ${Math.random() * 2}s infinite`,
+                        // animationDelay: `${Math.random() * 2}s`,
                         opacity: 0.8,
                         filter: 'blur(0.5px)'
                       }}
@@ -456,18 +467,18 @@ export function Homepage({ onNavigate, isAuthenticated }: HomepageProps) {
             <div>
               <h3 className="font-['Roboto'] text-white mb-4">Навигация</h3>
               <ul className="space-y-2 font-['Roboto'] text-white/60 text-sm">
-                <li><button onClick={() => onNavigate('home')} className="hover:text-white transition-colors">Главная</button></li>
-                <li><button onClick={() => onNavigate('examples')} className="hover:text-white transition-colors">Примеры QR</button></li>
-                <li><button onClick={() => onNavigate('instructions')} className="hover:text-white transition-colors">Инструкция</button></li>
-                <li><button onClick={() => onNavigate('contacts')} className="hover:text-white transition-colors">Контакты</button></li>
+                <li><button onClick={() => navigate('/')} className="hover:text-white transition-colors">Главная</button></li>
+                <li><button onClick={() => navigate('/examples')} className="hover:text-white transition-colors">Примеры QR</button></li>
+                <li><button onClick={() => navigate('/instructions')} className="hover:text-white transition-colors">Инструкция</button></li>
+                <li><button onClick={() => navigate('/contacts')} className="hover:text-white transition-colors">Контакты</button></li>
               </ul>
             </div>
             <div>
               <h3 className="font-['Roboto'] text-white mb-4">Аккаунт</h3>
               <ul className="space-y-2 font-['Roboto'] text-white/60 text-sm">
-                <li><button onClick={() => onNavigate('auth')} className="hover:text-white transition-colors">Войти</button></li>
-                <li><button onClick={() => onNavigate('qr-creator')} className="hover:text-white transition-colors">Создать QR</button></li>
-                <li><button onClick={() => onNavigate('subscription')} className="hover:text-white transition-colors">Подписка</button></li>
+                <li><button onClick={() => navigate('/auth')} className="hover:text-white transition-colors">Войти</button></li>
+                <li><button onClick={() => navigate('/qr/creator')} className="hover:text-white transition-colors">Создать QR</button></li>
+                <li><button onClick={() => navigate('/subscription')} className="hover:text-white transition-colors">Подписка</button></li>
               </ul>
             </div>
             <div>
