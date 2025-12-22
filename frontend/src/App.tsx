@@ -12,6 +12,7 @@ import { Examples } from './components/Examples';
 import { Instructions } from './components/Instructions';
 import { Contacts } from './components/Contacts';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import PageViewer from "./components/ViewPage"
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/examples" element={<Examples />} />
           <Route path="/instructions" element={<Instructions />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/viewPage/:pageId" element={<PageViewer />} />
 
           {/* Защищённые */}
           <Route

@@ -22,6 +22,7 @@ type QRStyle = 'square' | 'rounded' | 'dots' | 'fluid';
 export function QRCreator({onComplete }: QRCreatorProps) {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [pageId, setPageId] = useState<string | null>(null);
   const [qrName, setQrName] = useState('');
   const [qrStyle, setQrStyle] = useState<QRStyle>('square');
   const [primaryColor, setPrimaryColor] = useState('#7c6afa');
@@ -97,7 +98,10 @@ export function QRCreator({onComplete }: QRCreatorProps) {
       
       // Сохраняем полный объект для дальнейшего использования
       setCreatedQr(qrData);
-      
+
+      const extractedPageId = new URL(qrData.link).pathname.split('/').pop();
+      setPageId(extractedPageId);
+
       // Показать успех и перейти (без изменений)
       setSuccess(true);
       setTimeout(() => {
@@ -684,7 +688,7 @@ export function QRCreator({onComplete }: QRCreatorProps) {
                 <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                   <button
                     onClick={() => {
-                      navigate('/page-editor', createdQr.id);  // ← Передаём id
+                      navigate(`/page/${pageId}`, { state: { qrId: createdQr.id } });  // ← Передаём id
                     }}
                     className="group p-8 rounded-2xl border-2 border-white/10 hover:border-[#7c6afa] bg-white/5 hover:bg-white/10 transition-all duration-300"
                   >

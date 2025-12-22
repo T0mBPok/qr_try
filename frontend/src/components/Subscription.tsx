@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Crown, Zap, Lock, CreditCard, Calendar } from 'lucide-react';
 
 type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription';
@@ -11,6 +12,7 @@ type PlanType = 'free' | 'pro' | 'premium';
 type BillingPeriod = 'monthly' | 'yearly';
 
 export function Subscription({ onNavigate }: SubscriptionProps) {
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('pro');
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
   const [showCheckout, setShowCheckout] = useState(false);
@@ -79,7 +81,7 @@ export function Subscription({ onNavigate }: SubscriptionProps) {
     e.preventDefault();
     setPaymentSuccess(true);
     setTimeout(() => {
-      onNavigate('dashboard');
+      navigate('/dashboard');
     }, 2000);
   };
 
@@ -101,7 +103,7 @@ export function Subscription({ onNavigate }: SubscriptionProps) {
 
       {/* Back button */}
       <button
-        onClick={() => onNavigate('dashboard')}
+        onClick={() => navigate('/dashboard')}
         className="absolute top-4 left-4 sm:top-8 sm:left-8 z-20 px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
       >
         <span className="font-['Roboto'] flex items-center gap-2">

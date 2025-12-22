@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Type, Image as ImageIcon, Video, Link as LinkIcon, 
   Palette, Upload, Check, Pencil, Trash2, RotateCw, Move,
@@ -6,14 +8,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 
-type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription' | 'preview';
-
-interface PageEditorProps {
-  onNavigate: (page: Page) => void;
-  qrId: string | null;
-}
-
-type ElementType = 'text' | 'image' | 'video' | 'link' | 'drawing';
+type ElementType = 'text' | 'image' | 'video' | 'link' | 'drawing' | 'youtube';
 
 interface CanvasElement {
   id: string;
@@ -38,7 +33,12 @@ interface DrawingPath {
   width: number;
 }
 
-export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
+export function PageEditor() {
+  const navigate = useNavigate();
+  // const { pageId } = useParams();
+  const location = useLocation();
+  const qrId = location.state?.qrId;
+  
   const [saved, setSaved] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -80,8 +80,16 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
   const fonts = ['Roboto', 'Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana'];
   const fontSizes = [12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
 
+  const parseYoutubeId = (url: string): string | null => {
+    const regExp = /(?:youtube\.com\/.*v=|youtu\.be\/)([^&]+)/;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
+  }
+
+
   // Загрузка страницы при монтировании
   useEffect(() => {
+    
     if (qrId) {
       loadPageData();
     } else {
@@ -91,13 +99,15 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
   }, [qrId]);
 
     const loadPageData = async () => {
+      
       if (!qrId) return;
       const check = await api.user.checkAuth();
-
-      if (!check.ok) {
+      setViewOnly(false)
+      if (!check.data.authenticated) {
         console.log("👁 Режим просмотра (без авторизации)");
         setViewOnly(true);
       }
+      // console.log(viewOnly)
 
       try {
         setLoading(true);
@@ -107,7 +117,9 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
 
         // 1️⃣ Получаем QR
         const qrResponse = await api.qr.getById(Number(qrId));
+        console.log('📤 Запрос QR по id', qrId);
         const qr = qrResponse;
+        console.log('📥 Ответ QR:', qrResponse);
         
 
         if (!qr || !qr.link) {
@@ -168,6 +180,23 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
           setElements(page.elements);
         }
 
+        page.elements.forEach((el: any) => {
+          if (el.type === 'drawing') {
+            try {
+              const points = JSON.parse(el.content); 
+              drawings.push({
+                points,
+                color: el.style?.color || '#ffffff',
+                width: el.style?.lineWidth || 3
+              });
+              console.log(drawings)
+            } catch (err) {
+              console.error('Ошибка парсинга drawing:', err);
+            }
+          }});
+        
+        redrawCanvas();
+
         console.log('✅ Страница загружена:', page);
 
       } catch (err: any) {
@@ -180,37 +209,39 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
     };
 
 
-  const createNewPage = async () => {
-    if (!qrId) return;
+  // const createNewPage = async () => {
+  //   if (!qrId) return;
 
-    try {
-      console.log("🆕 Создание новой страницы...");
+  //   try {
+  //     console.log("🆕 Создание новой страницы...");
 
-      const response = await api.page.create({
-        qr_id: Number(qrId),
-        name: "Моя страница",
-        background: {
-          type: "gradient",
-          value: `linear-gradient(135deg, #7c6afa 0%, #c89afc 100%)`,
-        },
-        elements: [],
-      });
+  //     const response = await api.page.create({
+  //       qr_id: Number(qrId),
+  //       name: "Моя страница",
+  //       background: {
+  //         type: "gradient",
+  //         value: `linear-gradient(135deg, #7c6afa 0%, #c89afc 100%)`,
+  //       },
+  //       elements: [],
+  //     });
 
-      const page = response.data;
-      setPageData(page);
-      setPageId(page.id);
-      setPageTitle(page.name || "Моя страница");
+  //     const page = response.data;
+  //     setPageData(page);
+  //     setPageId(page.id);
+  //     setPageTitle(page.name || "Моя страница");
 
-      console.log("✅ Новая страница создана:", page);
-    } catch (err: any) {
-      console.error("❌ Ошибка создания страницы:", err);
-      throw err;
-    }
-  };
+  //     console.log("✅ Новая страница создана:", page);
+  //   } catch (err: any) {
+  //     console.error("❌ Ошибка создания страницы:", err);
+  //     throw err;
+  //   }
+  // };
 
 
   const handleSavePage = async () => {
+    console.log(viewOnly)
     if (viewOnly) return;
+    console.log(pageId)
     if (!pageId) {
       console.error('❌ Page ID не установлен');
       return;
@@ -254,10 +285,25 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
         },
       }));
 
+      const drawingElements = drawings.map((drawing, index) => ({
+        id: `drawing-${Date.now()}-${index}`,
+        type: 'drawing',
+        content: JSON.stringify(drawing.points), // можно хранить массив точек
+        x: 0, // всегда 0, т.к. рисуется на канвасе
+        y: 0,
+        width: drawCanvasRef.current?.width || 375,
+        height: drawCanvasRef.current?.height || 667,
+        rotation: 0,
+        style: {
+          color: drawing.color,
+          lineWidth: drawing.width
+        }
+      }));
+
       const payload = {
         name: pageTitle,
         background,
-        elements: formattedElements,
+        elements: [...formattedElements, ...drawingElements]
       };
 
       console.log("📤 Отправка payload:", payload);
@@ -297,7 +343,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
     const newElement: CanvasElement = {
       id: Date.now().toString(),
       type,
-      content: type === 'text' ? 'Новый текст' : type === 'link' ? 'https://' : '',
+      content: type === 'text' ? 'Новый текст' : type === 'link' ? 'https://' : type === 'youtube' ? '' : '', 
       x: 150,
       y: 150,
       width: type === 'text' ? 200 : 150,
@@ -443,6 +489,10 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
 
   // Redraw all paths when drawings change
   useEffect(() => {
+    redrawCanvas();
+  }, [drawings]);
+  
+  const redrawCanvas = () => {
     if (!drawCanvasRef.current) return;
     
     const ctx = drawCanvasRef.current.getContext('2d');
@@ -465,7 +515,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
         ctx.stroke();
       }
     });
-  }, [drawings]);
+  };
 
   const handleBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -547,7 +597,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
                 if (hasUnsavedChanges) {
                   setShowExitDialog(true);
                 } else {
-                  onNavigate('dashboard');
+                  navigate('/dashboard');
                 }
               }}
               className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all text-sm sm:text-base"
@@ -559,7 +609,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
             <h1 className="font-['Roboto'] text-base sm:text-xl text-white">Редактор страницы</h1>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <button
+              {/* <button
                 onClick={() => {
                   // Save current state to localStorage for preview
                   const previewData = {
@@ -572,13 +622,13 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
                   };
                   localStorage.setItem('previewData', JSON.stringify(previewData));
                   console.log('Preview data saved:', previewData);
-                  onNavigate('preview');
+                  navigate('/preview', { state: { qrId: qrId, pageId: pageId} });
                 }}
                 className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all text-sm sm:text-base"
               >
                 <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="font-['Roboto'] hidden sm:inline">Превью</span>
-              </button>
+              </button> */}
               
               <button
                 onClick={handleSavePage}
@@ -590,7 +640,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
 
               {saved && (
                 <button
-                  onClick={() => onNavigate('dashboard')}
+                  onClick={() => navigate('/dashboard')}
                   className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all"
                 >
                   <Home className="w-5 h-5" />
@@ -638,13 +688,22 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
                   <p className="font-['Roboto'] text-white text-xs">Видео</p>
                 </button>
                 
-                <button
+                {/* <button
                   onClick={() => addElement('link')}
                   className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#7c6afa] hover:bg-white/10 transition-all"
                 >
                   <LinkIcon className="w-5 h-5 text-[#c89afc] mx-auto mb-1" />
                   <p className="font-['Roboto'] text-white text-xs">Ссылка</p>
+                </button> */}
+
+                <button
+                  onClick={() => addElement('youtube')}
+                  className="p-3 rounded-xl bg-white/5 border border-white/10 hover:border-[#7c6afa] hover:bg-white/10 transition-all"
+                >
+                  <Video className="w-5 h-5 text-[#c89afc] mx-auto mb-1" />
+                  <p className="font-['Roboto'] text-white text-xs">YouTube</p>
                 </button>
+
               </div>
             </div>
 
@@ -902,21 +961,21 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
                     </label>
                   )}
                   
-                  {(selectedEl.type === 'video' || selectedEl.type === 'link') && (
+                  {(selectedEl.type === 'video' || selectedEl.type === 'youtube') && (
                     <div className="space-y-2">
                       <label className="font-['Roboto'] text-white/60 text-xs">
-                        {selectedEl.type === 'video' ? 'URL видео' : 'URL ссылки'}
+                        {selectedEl.type === 'video' ? 'URL видео' : 'URL Youtube'}
                       </label>
                       <input
                         type="url"
                         value={selectedEl.content}
                         onChange={(e) => updateElement(selectedEl.id, { content: e.target.value })}
                         className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:border-[#7c6afa] focus:outline-none"
-                        placeholder="https://"
+                        placeholder={selectedEl.type === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'https://'}
                       />
                     </div>
                   )}
-                  
+
                   <div className="pt-2 border-t border-white/10">
                     <p className="font-['Roboto'] text-white/40 text-xs mb-2">
                       Используйте мышь для перемещения, изменения размера и поворота
@@ -1006,6 +1065,28 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
                           )}
                         </div>
                       )}
+
+                      {element.type === 'youtube' && (
+                          <div
+                            key={element.id}
+                            style={{
+                              position: 'absolute',
+                              top: element.y,
+                              left: element.x,
+                              width: element.width,
+                              height: element.height,
+                              transform: `rotate(${element.rotation}deg)`
+                            }}
+                          >
+                            <iframe
+                              width="100%"
+                              height="100%"
+                              src={`https://www.youtube.com/embed/${element.content}`}
+                              frameBorder="0"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        )}
                       
                       {element.type === 'link' && (
                         <div className="w-full h-full bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center px-3">
@@ -1095,7 +1176,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
               <button
                 onClick={() => {
                   setShowExitDialog(false);
-                  onNavigate('dashboard');
+                  navigate('/dashboard');
                 }}
                 className="flex-1 px-4 py-2.5 rounded-lg bg-[#df5950]/20 border border-[#df5950]/30 text-[#df5950] hover:bg-[#df5950]/30 transition-all font-['Roboto'] text-sm"
               >
@@ -1106,7 +1187,7 @@ export function PageEditor({ onNavigate, qrId }: PageEditorProps) {
                 onClick={() => {
                   handleSave();
                   setShowExitDialog(false);
-                  setTimeout(() => onNavigate('dashboard'), 500);
+                  setTimeout(() => navigate('/dashboard'), 500);
                 }}
                 className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white hover:shadow-lg transition-all font-['Roboto'] text-sm"
               >

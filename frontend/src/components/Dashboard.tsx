@@ -21,6 +21,7 @@ interface QRCodeItem {
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const [pageId, setPageId] = useState<string | null>(null);
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,12 +83,12 @@ export function Dashboard() {
     }
   };
 
-  const handleEditQR = (id: string) => {
+  const onEditQR = (id: string) => {
     navigate(`/qr/${id}/settings`);
   };
 
-  const handleEditPage = (id: string) => {
-    navigate(`/page/${id}`);
+  const onEditPage = (id: string, qr_id: string) => {
+    navigate(`/page/${id}`, { state: { qrId: qr_id } });
   };
 
   const qrToDelete = qrCodes.find(qr => qr.id === deleteConfirm);
@@ -478,7 +479,7 @@ export function Dashboard() {
                         <div className="flex gap-3 pt-2">
                           {qr.type === 'custom' ? (
                             <button
-                              onClick={() => onEditPage(qr.id)}
+                              onClick={() => {onEditPage(pageId, qr.id)}}
                               className="group/btn relative flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] text-sm transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50 overflow-hidden"
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-[#c89afc] to-[#7c6afa] opacity-0 group-hover/btn:opacity-100 transition-opacity" />
@@ -522,7 +523,7 @@ export function Dashboard() {
                         : `Нет ${activeTab === 'custom' ? 'пользовательских' : 'перенаправлений'} QR-кодов`}
                     </p>
                     <button
-                      onClick={() => navigate('/qr/creator')}
+                      onClick={() => navigate('/qr/create')}
                       className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-[#c89afc] to-[#7c6afa] opacity-0 group-hover:opacity-100 transition-opacity" />

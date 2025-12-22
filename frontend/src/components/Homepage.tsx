@@ -15,6 +15,7 @@ export function Homepage() {
       try {
         const response = await userAPI.checkAuth();
         setIsAuthenticated(response.data.authenticated);
+        console.log(response)
       } catch (err) {
         setIsAuthenticated(false);
       }
@@ -82,7 +83,7 @@ export function Homepage() {
 
             {/* CTA Button */}
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => isAuthenticated ? navigate('/dashboard') : navigate('/auth')}
               className="px-6 sm:px-8 py-2 sm:py-2.5 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
             >
               <span className="font-['Roboto']">
