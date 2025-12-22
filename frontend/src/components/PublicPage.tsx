@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Logo } from './Logo';
 import { Loader2, AlertCircle, Instagram, Twitter, Facebook, Youtube, Linkedin, Link as LinkIcon, Globe, Mail, Phone, MapPin } from 'lucide-react';
 import api, { Page, ContentBlock } from '../services/api';

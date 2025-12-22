@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { ArrowLeft, Smartphone, Tablet, Monitor, Laptop } from 'lucide-react';
 import { Download } from 'lucide-react';
 
 type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription' | 'preview';
-
-interface PreviewPageProps {
-  onNavigate: (page: Page) => void;
-}
 
 type DeviceType = 'iphone' | 'ipad' | 'android' | 'desktop';
 
@@ -42,7 +40,11 @@ interface PreviewData {
   bgImage: string | null;
 }
 
-export function PreviewPage({ onNavigate }: PreviewPageProps) {
+export function PreviewPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const qrId = location.state?.qrId;
+  const pageId = location.state?.pageId;
   const [device, setDevice] = useState<DeviceType>('iphone');
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -152,7 +154,7 @@ export function PreviewPage({ onNavigate }: PreviewPageProps) {
         <div className="container mx-auto">
           <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4">
             <button
-              onClick={() => onNavigate('page-editor')}
+              onClick={() => navigate(`/page/${pageId}`, { state: {qrId: qrId}})}
               className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-all text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -161,10 +163,10 @@ export function PreviewPage({ onNavigate }: PreviewPageProps) {
 
             <h1 className="font-['Roboto'] text-base sm:text-xl text-white">Предпросмотр</h1>
 
-            <button className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white transition-all hover:shadow-lg text-sm sm:text-base">
+            {/* <button className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white transition-all hover:shadow-lg text-sm sm:text-base">
               <Download className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="font-['Roboto'] hidden sm:inline">Экспорт</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

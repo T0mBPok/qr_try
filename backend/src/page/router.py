@@ -21,8 +21,8 @@ async def create_page(page_data: PageCreate, user: str = Depends(get_current_use
     return page
 
 @router.get("/{page_id}/", response_model=PageOut)
-async def get_page(page_id: int, user: str = Depends(get_current_user)):
-    page = await PageDAO.get_one_or_none(id=page_id, user_id=user.id)
+async def get_page(page_id: int):
+    page = await PageDAO.get_one_or_none(id=page_id)
     if not page:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Page not found")
     return page

@@ -8,22 +8,6 @@ import bgImage from 'figma:asset/d172e93496736130643e676214481166b0b39a36.png';
 
 export function Homepage() {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const response = await userAPI.checkAuth();
-        setIsAuthenticated(response.data.authenticated);
-      } catch (err) {
-        setIsAuthenticated(false);
-      }
-    }
-
-    checkAuth();
-  }, []);
-
-  console.log("auth - ", isAuthenticated);
   return (
     <div className="relative min-h-screen bg-[#040404] overflow-hidden">
       {/* Futuristic Animated Background */}

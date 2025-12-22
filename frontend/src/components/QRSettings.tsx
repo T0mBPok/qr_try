@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, ExternalLink, Copy, Check, Eye, BarChart, Download, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 
 type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription';
 
-interface QRSettingsProps {
-  onNavigate: (page: Page) => void;
-  qrId: string | null;
-  onEditPage: (qrId: string) => void;
-}
 
-export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
+export function QRSettings() {
+  const navigate = useNavigate();
+  const { qrId } = useParams<{ qrId: string }>();
   const [linkType, setLinkType] = useState<'external' | 'custom'>('external');
+  const [pageId, setPageId] = useState<string | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -26,6 +26,10 @@ export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
   const [isActive, setIsActive] = useState(true);
 
   const generatedQRUrl = qrData?.qr_url || `https://qrwear.app/scan/${qrId || 'abc123'}`;
+
+  const location = useLocation();
+  const qrFromState = location.state?.qr;
+
 
   // Загрузка QR-кода при монтировании
   useEffect(() => {
@@ -51,6 +55,8 @@ export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
       setQrData(qr);
       setQrName(qr.name);
       setIsActive(qr.is_active);
+      const extractedPageId = new URL(qr.link).pathname.split('/').pop();
+      setPageId(extractedPageId);
       
       // TODO: Определить тип ссылки из данных
       // setLinkType(...);
@@ -91,7 +97,7 @@ export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
         is_active: isActive,
         // TODO: Добавить поля для типа ссылки и URL когда backend будет готов
         // redirect_type: linkType,
-        // redirect_url: externalUrl
+        link: externalUrl
       });
 
       setSaved(true);
@@ -116,7 +122,7 @@ export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
 
       {/* Back button */}
       <button
-        onClick={() => onNavigate('dashboard')}
+        onClick={() => navigate('/dashboard')}
         className="absolute top-4 left-4 sm:top-8 sm:left-8 z-20 px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
       >
         <span className="font-['Roboto'] flex items-center gap-2">
@@ -248,7 +254,7 @@ export function QRSettings({ onNavigate, qrId, onEditPage }: QRSettingsProps) {
                           Создайте уникальную страницу с вашим контентом: текст, изображения, видео, ссылки и многое другое.
                         </p>
                         <button
-                          onClick={() => qrId && onEditPage(qrId)}
+                          onClick={() => navigate(`/page/${pageId}`, { state: { qrId: qrId } })}
                           className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#7c6afa] to-[#c89afc] text-white font-['Roboto'] transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/50"
                         >
                           Перейти к редактору

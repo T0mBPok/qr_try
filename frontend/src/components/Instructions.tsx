@@ -1,15 +1,16 @@
 import { ArrowLeft, QrCode, Palette, Edit, Share2, Download, Smartphone, Check, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
 import { Logo } from './Logo';
 import bgImage from 'figma:asset/d172e93496736130643e676214481166b0b39a36.png';
+import { userAPI } from '../services/api';
 
 type Page = 'home' | 'dashboard' | 'auth' | 'qr-creator' | 'qr-settings' | 'page-editor' | 'subscription' | 'examples' | 'instructions' | 'contacts';
 
-interface InstructionsProps {
-  onNavigate: (page: Page) => void;
-  isAuthenticated: boolean;
-}
 
-export function Instructions({ onNavigate, isAuthenticated }: InstructionsProps) {
+export function Instructions() {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const steps = [
     {
       number: '01',
@@ -115,6 +116,19 @@ export function Instructions({ onNavigate, isAuthenticated }: InstructionsProps)
     }
   ];
 
+  useEffect(() => {
+      async function checkAuth() {
+        try {
+          const response = await userAPI.checkAuth();
+          setIsAuthenticated(response.data.authenticated);
+        } catch (err) {
+          setIsAuthenticated(false);
+        }
+      }
+  
+      checkAuth();
+    }, []);
+
   return (
     <div className="min-h-screen bg-[#040404] relative overflow-hidden">
       {/* Futuristic Animated Background */}
@@ -156,7 +170,7 @@ export function Instructions({ onNavigate, isAuthenticated }: InstructionsProps)
       <div className="relative z-10 container mx-auto px-4 py-6 sm:py-8">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => onNavigate('home')}
+            onClick={() => navigate('/')}
             className="px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-105 text-sm sm:text-base"
           >
             <span className="font-['Roboto'] flex items-center gap-2">
@@ -332,7 +346,7 @@ export function Instructions({ onNavigate, isAuthenticated }: InstructionsProps)
             Создай свой первый QR-код бесплатно за 5 минут
           </p>
           <button
-            onClick={() => onNavigate(isAuthenticated ? 'qr-creator' : 'auth')}
+            onClick={() => navigate(isAuthenticated ? '/qr/create' : '/auth')}
             className="px-8 sm:px-10 py-3 sm:py-4 rounded-full bg-white text-[#7c6afa] font-['Roboto'] transition-all duration-300 hover:shadow-lg hover:scale-105 text-sm sm:text-base"
           >
             Создать QR-код
